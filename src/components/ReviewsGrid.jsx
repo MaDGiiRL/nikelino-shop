@@ -49,16 +49,37 @@ export default function ReviewsGrid() {
           <motion.article
             key={`${r.author}-${i}`}
             variants={item}
-            className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#0b1324] to-[#0e1830] shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+            className="relative overflow-hidden rounded-2xl border border-white/10 
+             bg-gradient-to-b from-[#0b1324] to-[#0e1830] 
+             shadow-[0_24px_80px_rgba(0,0,0,0.45)] 
+             transition-all duration-300 ease-out 
+             hover:scale-[1.03] hover:shadow-[0_32px_90px_rgba(0,0,0,0.6)] hover:border-transparent hover:ring-1 hover:ring-red-500"
           >
             {/* bordo accent sottile */}
             <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#28c8ff]/40 to-transparent" />
+
             {/* header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
               <div className="relative">
-                <div className="w-9 h-9 rounded-full bg-white/10 grid place-items-center font-extrabold">
+                {/* Fallback iniziali */}
+                <div className="w-9 h-9 rounded-full bg-white/10 grid place-items-center font-extrabold text-sm">
                   {initials || "?"}
                 </div>
+
+                {/* Avatar sopra il fallback: se carica copre, se fallisce sparisce e resta il fallback */}
+                {r.avatar ? (
+                  <img
+                    src={r.avatar}
+                    alt={r.author}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                    className="absolute inset-0 w-9 h-9 rounded-full object-cover border border-white/20"
+                  />
+                ) : null}
+
                 <span className="absolute -inset-0.5 rounded-full ring-1 ring-[#28c8ff]/50 pointer-events-none" />
               </div>
 

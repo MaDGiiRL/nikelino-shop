@@ -11,7 +11,7 @@ export default function Footer() {
             alt="logo"
             className="w-8 rounded-full"
           />
-          <span>NIKELINO Shop</span>
+          <span>Nikelino Shop</span>
         </div>
 
         {/* Links + Year */}

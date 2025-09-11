@@ -4,6 +4,7 @@ const BUCKET = "media";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase/supabase-client";
 import Swal from "sweetalert2";
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- categorie e tag come prima
 const CATEGORIES = [
@@ -39,6 +40,58 @@ function ensureClientId() {
   }
   return id;
 }
+
+/* ---------------- Framer Motion: variants riusabili ---------------- */
+const pageHeaderVariant = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+};
+
+// ❌ niente animazione del pannello intero in entrata
+// const panelVariant = {...}  <-- rimosso
+
+// container che gestisce solo lo stagger dei campi
+const formGridVariant = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.04 },
+  },
+};
+
+// singolo campo del form
+const fieldVariant = {
+  hidden: { opacity: 0, y: 12, scale: 0.98 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring", stiffness: 240, damping: 18 },
+  },
+};
+
+const gridVariant = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.065, delayChildren: 0.06 },
+  },
+};
+
+const cardItemVariant = {
+  hidden: { opacity: 0, y: 18, scale: 0.985 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring", stiffness: 260, damping: 20 },
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    scale: 0.98,
+    transition: { duration: 0.18, ease: "easeInOut" },
+  },
+};
 
 export default function Admin() {
   // 🔔 niente session: pannello sempre visibile
@@ -257,20 +310,29 @@ export default function Admin() {
   /* ---------------- View: pannello sempre visibile ---------------- */
   return (
     <section className="container-max my-10 space-y-10">
-      <div className="flex items-center justify-between">
+      {/* Header animato */}
+      <motion.div
+        className="flex items-center justify-between"
+        variants={pageHeaderVariant}
+        initial="hidden"
+        animate="show"
+      >
         <h1 className="text-3xl md:text-4xl font-black">Admin Panel</h1>
         {/* niente bottone Esci */}
-      </div>
+      </motion.div>
 
-      {/* FORM PUBBLICAZIONE */}
+      {/* FORM PUBBLICAZIONE: pannello statico, animiamo i CAMPI */}
       <div className="card-surface p-6">
         <h3 className="text-xl font-black mb-4">Pubblica prodotto</h3>
-        <form
+        <motion.form
           onSubmit={onSubmit}
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          variants={formGridVariant}
+          initial="hidden"
+          animate="show"
         >
           {/* Titolo */}
-          <div className="space-y-2">
+          <motion.div variants={fieldVariant} className="space-y-2">
             <label className="text-sm text-white/70">Titolo</label>
             <input
               value={form.title}
@@ -279,10 +341,10 @@ export default function Admin() {
               }
               className="w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
             />
-          </div>
+          </motion.div>
 
           {/* Prezzo */}
-          <div className="space-y-2">
+          <motion.div variants={fieldVariant} className="space-y-2">
             <label className="text-sm text-white/70">Prezzo (es: €25)</label>
             <input
               value={form.price}
@@ -291,54 +353,84 @@ export default function Admin() {
               }
               className="w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
             />
-          </div>
+          </motion.div>
 
           {/* Categoria */}
-          <div className="space-y-2">
+          <motion.div variants={fieldVariant} className="space-y-2">
             <label className="text-sm text-white/70">Categoria</label>
-            <select
-              value={form.category}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, category: e.target.value }))
-              }
-              className="w-full px-3 py-2 rounded-xl 
-                         bg-[#0b1324] text-white 
-                         border border-white/20
-                         focus:border-[#28c8ff] focus:ring-2 focus:ring-[#28c8ff]/40
-                         hover:border-[#60efff]
-                         transition-colors duration-200"
-            >
-              {CATEGORIES.filter((c) => c !== "Tutte").map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="relative">
+              <select
+                value={form.category}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, category: e.target.value }))
+                }
+                className={[
+                  "w-full px-3 py-2 rounded-xl border outline-none pr-10",
+                  "[color-scheme:dark]",
+                  "appearance-none  bg-white/10 text-white border-white/20",
+                  "focus:border-[#28c8ff] focus:ring-2 focus:ring-[#28c8ff]/40",
+                  "hover:border-[#60efff] transition-colors duration-200",
+                  "[&>option]:bg-[#0b1324] [&>option]:text-white",
+                ].join(" ")}
+              >
+                {CATEGORIES.filter((c) => c !== "Tutte").map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              {/* chevron */}
+              <svg
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-80"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M7 10l5 5 5-5H7z" />
+              </svg>
+            </div>
+          </motion.div>
 
           {/* Tag */}
-          <div className="space-y-2">
+          <motion.div variants={fieldVariant} className="space-y-2">
             <label className="text-sm text-white/70">Tag</label>
-            <select
-              value={form.tag}
-              onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl 
-                         bg-[#0b1324] text-white 
-                         border border-white/20
-                         focus:border-[#28c8ff] focus:ring-2 focus:ring-[#28c8ff]/40
-                         hover:border-[#60efff]
-                         transition-colors duration-200"
-            >
-              {TAGS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="relative">
+              <select
+                value={form.tag}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, tag: e.target.value }))
+                }
+                className={[
+                  "w-full px-3 py-2 rounded-xl border outline-none pr-10",
+                  "[color-scheme:dark]",
+                  "appearance-none  bg-white/10 text-white border-white/20",
+                  "focus:border-[#28c8ff] focus:ring-2 focus:ring-[#28c8ff]/40",
+                  "hover:border-[#60efff] transition-colors duration-200",
+                  "[&>option]:bg-[#0b1324] [&>option]:text-white",
+                ].join(" ")}
+              >
+                {TAGS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <svg
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-80"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M7 10l5 5 5-5H7z" />
+              </svg>
+            </div>
+          </motion.div>
 
           {/* Short */}
-          <div className="md:col-span-2 space-y-2">
+          <motion.div
+            variants={fieldVariant}
+            className="md:col-span-2 space-y-2"
+          >
             <label className="text-sm text-white/70">Riassunto breve</label>
             <textarea
               rows={2}
@@ -346,12 +438,15 @@ export default function Admin() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, short: e.target.value }))
               }
-              className="w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
+              className="w-full  bg-white/10 px-3 py-2 rounded-xl bg:white/10 text-white border border-white/20 outline-none"
             />
-          </div>
+          </motion.div>
 
           {/* Details */}
-          <div className="md:col-span-2 space-y-2">
+          <motion.div
+            variants={fieldVariant}
+            className="md:col-span-2 space-y-2"
+          >
             <label className="text-sm text-white/70">Dettagli</label>
             <textarea
               rows={5}
@@ -361,19 +456,26 @@ export default function Admin() {
               }
               className="w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
             />
-          </div>
+          </motion.div>
 
           {/* Dropzone + anteprime */}
-          <div className="md:col-span-2 space-y-3">
+          <motion.div
+            variants={fieldVariant}
+            className="md:col-span-2 space-y-3"
+          >
             <label className="text-sm text-white/70">
               Media (immagini/video, multipli)
             </label>
 
-            <div
+            {/* Dropzone con microanimazioni */}
+            <motion.div
               ref={dropRef}
               className="rounded-2xl border border-dashed border-white/20 bg-white/[.04]
-                         p-5 text-center hover:border-[#60efff] transition-colors"
+                         p-5 text-center hover:border-[#60efff] transition-colors cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.995 }}
+              transition={{ type: "spring", stiffness: 280, damping: 18 }}
             >
               <p className="text-white/80 font-semibold">Trascina qui i file</p>
               <p className="text-white/60 text-sm">
@@ -387,133 +489,177 @@ export default function Admin() {
                 onChange={(e) => addFiles(e.target.files)}
                 className="hidden"
               />
-            </div>
+            </motion.div>
 
-            {form.files.length > 0 && (
-              <>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-                  {form.files.map((f, i) => {
-                    const isVideo = inferIsVideo(f, f.type);
-                    const url = URL.createObjectURL(f);
-                    return (
-                      <div
-                        key={i}
-                        className="relative rounded-xl overflow-hidden border border-white/15 bg-black/30"
-                        title={f.name}
-                      >
-                        <div className="aspect-[16/10] bg-[#0b1220]">
-                          {isVideo ? (
-                            <video
-                              src={url}
-                              className="w-full h-full object-cover"
-                              muted
-                            />
-                          ) : (
-                            <img
-                              src={url}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 p-2 border-t border-white/10">
-                          <button
-                            type="button"
-                            onClick={() => moveFile(i, -1)}
-                            className="px-2 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90 text-xs"
-                            disabled={i === 0}
-                            title="Sposta a sinistra"
-                          >
-                            ←
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveFile(i, +1)}
-                            className="px-2 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90 text-xs"
-                            disabled={i === form.files.length - 1}
-                            title="Sposta a destra"
-                          >
-                            →
-                          </button>
-                          <span className="text-xs text-white/60 truncate">
-                            {isVideo ? "Video" : "Immagine"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(i)}
-                            className="ml-auto px-2 py-1 rounded-lg bg-white text-[#0a1020] text-xs font-bold"
-                            title="Rimuovi"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-white/50">
-                  Suggerimento: l’ordine delle anteprime è l’ordine salvato (la
-                  prima è la thumbnail).
-                </p>
-              </>
-            )}
-          </div>
+            {/* Anteprime: AnimatePresence + layout per riordino e rimozione */}
+            <AnimatePresence initial={false}>
+              {form.files.length > 0 && (
+                <motion.div
+                  key="previews-block"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.div
+                    className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3"
+                    variants={gridVariant}
+                    initial="hidden"
+                    animate="show"
+                    layout
+                  >
+                    {form.files.map((f, i) => {
+                      const isVideo = inferIsVideo(f, f.type);
+                      const url = URL.createObjectURL(f);
+                      return (
+                        <motion.div
+                          key={`${f.name}-${i}`}
+                          className="relative rounded-xl overflow-hidden border border-white/15 bg-black/30"
+                          title={f.name}
+                          variants={cardItemVariant}
+                          layout
+                          whileHover={{ y: -2 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 260,
+                            damping: 20,
+                          }}
+                        >
+                          <div className="aspect-[16/10] bg-[#0b1220]">
+                            {isVideo ? (
+                              <video
+                                src={url}
+                                className="w-full h-full object-cover"
+                                muted
+                              />
+                            ) : (
+                              <img
+                                src={url}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 p-2 border-t border-white/10">
+                            <button
+                              type="button"
+                              onClick={() => moveFile(i, -1)}
+                              className="px-2 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90 text-xs"
+                              disabled={i === 0}
+                              title="Sposta a sinistra"
+                            >
+                              ←
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveFile(i, +1)}
+                              className="px-2 py-1 rounded-lg bg:white/10 border border-white/20 text-white/90 text-xs"
+                              disabled={i === form.files.length - 1}
+                              title="Sposta a destra"
+                            >
+                              →
+                            </button>
+                            <span className="text-xs text-white/60 truncate">
+                              {isVideo ? "Video" : "Immagine"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeFile(i)}
+                              className="ml-auto px-2 py-1 rounded-lg bg-white text-[#0a1020] text-xs font-bold"
+                              title="Rimuovi"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                  <p className="text-xs text-white/50 mt-1">
+                    Suggerimento: l’ordine delle anteprime è l’ordine salvato
+                    (la prima è la thumbnail).
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
           {/* Submit */}
-          <div className="md:col-span-2">
-            <button
+          <motion.div variants={fieldVariant} className="md:col-span-2">
+            <motion.button
               disabled={loading}
               type="submit"
               className="btn btn-primary"
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
             >
               {loading ? "Pubblico…" : "Pubblica"}
-            </button>
-          </div>
-        </form>
+            </motion.button>
+          </motion.div>
+        </motion.form>
       </div>
 
       {/* LISTA PRODOTTI */}
       <div className="space-y-3">
         <h3 className="text-xl font-black">Prodotti esistenti</h3>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-[22px]">
-          {products.map((p) => (
-            <article key={p.id} className="card-surface overflow-hidden">
-              <div className="relative aspect-[16/10] bg-[#0b1220]">
-                {p.media?.[0]?.type === "image" ? (
-                  <img
-                    src={p.media[0].src}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <video
-                    src={p.media?.[0]?.src}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                <span className="badge badge-soft absolute left-2 top-2">
-                  {p.tag}
-                </span>
-              </div>
-              <div className="p-3">
-                <div className="flex items-center gap-2">
-                  <div className="font-black">{p.title}</div>
-                  <div className="ml-auto font-black">{p.price}</div>
+
+        <motion.div
+          className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-[22px]"
+          variants={gridVariant}
+          initial="hidden"
+          animate="show"
+          layout
+        >
+          <AnimatePresence mode="popLayout">
+            {products.map((p) => (
+              <motion.article
+                key={p.id}
+                className="card-surface overflow-hidden"
+                variants={cardItemVariant}
+                layout
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                whileHover={{ y: -3 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              >
+                <div className="relative aspect-[16/10] bg-[#0b1220]">
+                  {p.media?.[0]?.type === "image" ? (
+                    <img
+                      src={p.media[0].src}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <video
+                      src={p.media?.[0]?.src}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  <span className="badge badge-soft absolute left-2 top-2">
+                    {p.tag}
+                  </span>
                 </div>
-                <p className="text-sm text-white/75 mt-1 line-clamp-2">
-                  {p.short}
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="badge badge-soft">{p.category}</span>
-                  <button
-                    onClick={() => removeProduct(p.id)}
-                    className="ml-auto px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-white/90 hover:-translate-y-0.5 transition"
-                  >
-                    Elimina
-                  </button>
+                <div className="p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="font-black">{p.title}</div>
+                    <div className="ml-auto font-black">{p.price}</div>
+                  </div>
+                  <p className="text-sm text-white/75 mt-1 line-clamp-2">
+                    {p.short}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="badge badge-soft">{p.category}</span>
+                    <button
+                      onClick={() => removeProduct(p.id)}
+                      className="ml-auto px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-white/90 hover:-translate-y-0.5 transition"
+                    >
+                      Elimina
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </motion.article>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </section>
   );
