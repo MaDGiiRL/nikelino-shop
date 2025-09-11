@@ -70,9 +70,17 @@ export default function Admin() {
   async function signIn(e) {
     e.preventDefault();
     if (!email) return;
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) Swal.fire("Errore", error.message, "error");
-    else Swal.fire("Controlla la mail", "Ti ho inviato un Magic Link", "info");
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: "https://nikelino-shop.vercel.app", 
+      },
+    });
+    if (error) {
+      Swal.fire("Errore", error.message, "error");
+    } else {
+      Swal.fire("Controlla la mail", "Ti ho inviato un Magic Link", "info");
+    }
   }
 
   async function signOut() {

@@ -3,32 +3,32 @@ export const CATEGORIES = [
 ];
 
 
-// export const PRODUCTS = [
-//     {
-//         id: 'tattoo-001', title: 'Pack Tatuaggi — Santa Muerte', price: '€25', category: 'Tattoos', tag: 'Fantasy',
-//         short: 'Pack tattoo ad alta definizione per pelli FiveM.',
-//         details: 'Pack ispirato alla Santa Muerte, ottimizzato per texture nitide e compatibili con server FiveM. Include varianti e PSD opzionali su richiesta.',
-//         media: [{ type: 'image', src: 'https://picsum.photos/seed/t1/1200/750' }, { type: 'image', src: 'https://picsum.photos/seed/t2/1200/750' }, { type: 'video', src: 'https://filesamples.com/samples/video/mp4/sample_640x360.mp4' }]
-//     },
-//     {
-//         id: 'ped-001', title: 'Ped — Personaggio Custom', price: '€40', category: 'Ped', tag: 'Modern',
-//         short: 'Ped personalizzato con rigging ottimizzato.',
-//         details: 'Model custom ottimizzato per prestazioni con LOD e collisioni corrette. Possibilità di varianti outfit.',
-//         media: [{ type: 'image', src: 'https://picsum.photos/seed/p1/1200/750' }, { type: 'image', src: 'https://picsum.photos/seed/p2/1200/750' }]
-//     },
-//     {
-//         id: 'map-001', title: 'Mappa — Arena Fantasy', price: '€50', category: 'Mappe', tag: 'Fantasy',
-//         short: 'Arena per eventi PvE/PvP con luci dinamiche.',
-//         details: 'Arena modulare con props ottimizzati e navmesh. Perfetta per eventi roleplay e boss fight.',
-//         media: [{ type: 'image', src: 'https://picsum.photos/seed/m1/1200/750' }, { type: 'image', src: 'https://picsum.photos/seed/m2/1200/750' }]
-//     },
-//     {
-//         id: 'script-001', title: 'Script — BlipsMaker', price: '€30', category: 'Script', tag: 'Modern',
-//         short: 'Crea, modifica e condividi blip sulla mappa.',
-//         details: 'Interfaccia con salvataggio persistente, condivisione via ID e conferma. Stile menu verticale.',
-//         media: [{ type: 'image', src: 'https://picsum.photos/seed/s1/1200/750' }, { type: 'video', src: 'https://filesamples.com/samples/video/mp4/sample_960x400_ocean_with_audio.mp4' }]
-//     },
-// ];
+export const PRODUCTS = [
+    {
+        id: 'tattoo-001', title: 'Pack Tatuaggi — Santa Muerte', price: '€25', category: 'Tattoos', tag: 'Fantasy',
+        short: 'Pack tattoo ad alta definizione per pelli FiveM.',
+        details: 'Pack ispirato alla Santa Muerte, ottimizzato per texture nitide e compatibili con server FiveM. Include varianti e PSD opzionali su richiesta.',
+        media: [{ type: 'image', src: 'https://picsum.photos/seed/t1/1200/750' }, { type: 'image', src: 'https://picsum.photos/seed/t2/1200/750' }, { type: 'video', src: 'https://filesamples.com/samples/video/mp4/sample_640x360.mp4' }]
+    },
+    {
+        id: 'ped-001', title: 'Ped — Personaggio Custom', price: '€40', category: 'Ped', tag: 'Modern',
+        short: 'Ped personalizzato con rigging ottimizzato.',
+        details: 'Model custom ottimizzato per prestazioni con LOD e collisioni corrette. Possibilità di varianti outfit.',
+        media: [{ type: 'image', src: 'https://picsum.photos/seed/p1/1200/750' }, { type: 'image', src: 'https://picsum.photos/seed/p2/1200/750' }]
+    },
+    {
+        id: 'map-001', title: 'Mappa — Arena Fantasy', price: '€50', category: 'Mappe', tag: 'Fantasy',
+        short: 'Arena per eventi PvE/PvP con luci dinamiche.',
+        details: 'Arena modulare con props ottimizzati e navmesh. Perfetta per eventi roleplay e boss fight.',
+        media: [{ type: 'image', src: 'https://picsum.photos/seed/m1/1200/750' }, { type: 'image', src: 'https://picsum.photos/seed/m2/1200/750' }]
+    },
+    {
+        id: 'script-001', title: 'Script — BlipsMaker', price: '€30', category: 'Script', tag: 'Modern',
+        short: 'Crea, modifica e condividi blip sulla mappa.',
+        details: 'Interfaccia con salvataggio persistente, condivisione via ID e conferma. Stile menu verticale.',
+        media: [{ type: 'image', src: 'https://picsum.photos/seed/s1/1200/750' }, { type: 'video', src: 'https://filesamples.com/samples/video/mp4/sample_960x400_ocean_with_audio.mp4' }]
+    },
+];
 
 
 export const COLLABORATORS = [
