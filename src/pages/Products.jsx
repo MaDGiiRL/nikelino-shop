@@ -17,6 +17,7 @@ const STATIC_CATEGORIES = [
   "Spells",
   "Armi",
   "Occhi Custom",
+  "Grafiche"
 ];
 
 // Variants per composizione elegante con stagger

@@ -2,6 +2,24 @@ import { useEffect, useState } from "react";
 import MediaCarousel from "./MediaCarousel";
 import { Badge, BadgeSolid } from "./Badges";
 
+function StatusBadge({ status }) {
+  if (!status) return null;
+  const isSold = status === "venduto";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-black border ${
+        isSold
+          ? "bg-[#fd6058fb] text-white border-white/20"
+          : "bg-[#123a22] text-[#a7ffcb] border-white/20"
+      }`}
+      title={isSold ? "Venduto" : "In vendita"}
+    >
+      <span className="tracking-widest">{isSold ? "⛔" : "💰"}</span>
+      {isSold ? "Venduto" : "In vendita"}
+    </span>
+  );
+}
+
 export default function ProductModal({ product, onClose }) {
   const [index, setIndex] = useState(0);
   const total = product.media?.length ?? 0;
@@ -19,6 +37,8 @@ export default function ProductModal({ product, onClose }) {
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total, onClose]);
+
+  const isSold = product.status === "venduto";
 
   return (
     <div className="fixed inset-0 z-50">
@@ -44,7 +64,7 @@ export default function ProductModal({ product, onClose }) {
 
         {/* Media + categorie/prezzo */}
         <div className="flex flex-col border-b md:border-b-0 md:border-r border-white/10">
-          {/* Contenitore media: riempie lo spazio e permette il centraggio verticale */}
+          {/* Contenitore media */}
           <div className="relative flex-1 min-h-[260px]">
             <MediaCarousel
               media={product.media}
@@ -52,23 +72,15 @@ export default function ProductModal({ product, onClose }) {
               onIndex={setIndex}
             />
 
-            {/* FRECCE STILE BOOTSTRAP — sempre a metà della foto */}
+            {/* FRECCE */}
             {total > 1 && (
               <>
-                {/* Prev */}
                 <button
                   type="button"
                   onClick={prev}
                   aria-label="Immagine precedente"
-                  className="absolute left-3 top-40 translate-y-1/2
-                             w-11 h-11 rounded-full
-                             flex items-center justify-center
-                             bg-black/40 hover:bg-black/55
-                             text-white backdrop-blur
-                             ring-1 ring-white/20 hover:ring-white/40
-                             transition focus:outline-none focus:ring-2 focus:ring-white/70"
+                  className="absolute left-3 top-40 translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/55 text-white backdrop-blur ring-1 ring-white/20 hover:ring-white/40 transition focus:outline-none focus:ring-2 focus:ring-white/70"
                 >
-                  {/* Chevron sinistra */}
                   <svg
                     viewBox="0 0 16 16"
                     width="18"
@@ -81,21 +93,12 @@ export default function ProductModal({ product, onClose }) {
                     />
                   </svg>
                 </button>
-
-                {/* Next */}
                 <button
                   type="button"
                   onClick={next}
                   aria-label="Immagine successiva"
-                  className="absolute right-3 top-40 translate-y-1/2
-                             w-11 h-11 rounded-full
-                             flex items-center justify-center
-                             bg-black/40 hover:bg-black/55
-                             text-white backdrop-blur
-                             ring-1 ring-white/20 hover:ring-white/40
-                             transition focus:outline-none focus:ring-2 focus:ring-white/70"
+                  className="absolute right-3 top-40 translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/55 text-white backdrop-blur ring-1 ring-white/20 hover:ring-white/40 transition focus:outline-none focus:ring-2 focus:ring-white/70"
                 >
-                  {/* Chevron destra */}
                   <svg
                     viewBox="0 0 16 16"
                     width="18"
@@ -108,8 +111,6 @@ export default function ProductModal({ product, onClose }) {
                     />
                   </svg>
                 </button>
-
-                {/* Indicatori */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
                   {Array.from({ length: total }).map((_, i) => (
                     <span
@@ -128,6 +129,7 @@ export default function ProductModal({ product, onClose }) {
           <div className="flex items-center text-3xl gap-2 px-4 py-3 border-t border-white/10">
             <Badge>{product.category}</Badge>
             <BadgeSolid>{product.tag}</BadgeSolid>
+            <StatusBadge status={product.status} />
             <span className="ml-auto font-black text-white">
               {product.price}
             </span>
@@ -146,12 +148,18 @@ export default function ProductModal({ product, onClose }) {
           {/* CTA */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <a
-              className="btn btn--ghost btn-ghost"
-              href="https://discord.gg/BjHsyyta8r"
-              target="_blank"
-              rel="noreferrer"
+              className={`btn ${
+                isSold
+                  ? "opacity-60 pointer-events-none"
+                  : "btn--ghost btn-ghost"
+              }`}
+              href={isSold ? undefined : "https://discord.gg/BjHsyyta8r"}
+              target={isSold ? undefined : "_blank"}
+              rel={isSold ? undefined : "noreferrer"}
+              aria-disabled={isSold}
+              title={isSold ? "Prodotto venduto" : "Ordina su Discord"}
             >
-              Ordina su Discord
+              {isSold ? "Prodotto venduto" : "Ordina su Discord"}
             </a>
           </div>
         </div>

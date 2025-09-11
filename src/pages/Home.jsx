@@ -75,12 +75,12 @@ export default function Home() {
               scale: { duration: 0.6 },
               y: { repeat: Infinity, duration: 6, ease: "easeInOut" },
             }}
-            className="relative w-[140px] h-[140px]"
+            className="relative w-[200px] h-[200px]"
           >
             <img
               src={logoImg}
               alt="Nikelino logo"
-              className="w-full h-full object-cover rounded-full border border-white/20 shadow-deep"
+              className="w-full h-full object-cover rounded-full"
             />
             <span className="absolute -inset-6 rounded-full bg-[radial-gradient(circle,#60efff55,transparent_60%)] blur-xl animate-[pulse_3s_ease-in-out_infinite]" />
           </motion.div>

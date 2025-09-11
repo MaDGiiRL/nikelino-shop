@@ -1,4 +1,3 @@
-// src/pages/Admin.jsx
 const BUCKET = "media";
 
 import { useEffect, useRef, useState } from "react";
@@ -21,6 +20,12 @@ const CATEGORIES = [
 ];
 const TAGS = ["Fantasy", "Modern"];
 
+// 🔥 nuovo: stati
+const STATUSES = [
+  { value: "in_vendita", label: "In vendita", icon: "💰" },
+  { value: "venduto", label: "Venduto", icon: "XX" },
+];
+
 const empty = {
   title: "",
   price: "",
@@ -28,6 +33,7 @@ const empty = {
   tag: "Modern",
   short: "",
   details: "",
+  status: "in_vendita", // 👈 nuovo
   files: [], // File[]
 };
 
@@ -47,10 +53,6 @@ const pageHeaderVariant = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
-// ❌ niente animazione del pannello intero in entrata
-// const panelVariant = {...}  <-- rimosso
-
-// container che gestisce solo lo stagger dei campi
 const formGridVariant = {
   hidden: {},
   show: {
@@ -58,7 +60,6 @@ const formGridVariant = {
   },
 };
 
-// singolo campo del form
 const fieldVariant = {
   hidden: { opacity: 0, y: 12, scale: 0.98 },
   show: {
@@ -93,8 +94,23 @@ const cardItemVariant = {
   },
 };
 
+function StatusPill({ status }) {
+  const s = STATUSES.find((x) => x.value === status) || STATUSES[0];
+  return (
+    <span
+      className={`badge absolute right-2 top-2 select-none ${
+        status === "venduto"
+          ? "bg-[#ff3b30] text-white border border-white/20"
+          : "bg-[#123a22] text-[#a7ffcb] border border-white/20"
+      }`}
+      title={s.label}
+    >
+      <span className="font-black mr-1">{s.icon}</span> {s.label}
+    </span>
+  );
+}
+
 export default function Admin() {
-  // 🔔 niente session: pannello sempre visibile
   const clientId = ensureClientId();
 
   const [form, setForm] = useState(empty);
@@ -272,6 +288,7 @@ export default function Admin() {
         tag: form.tag,
         short: form.short.trim(),
         details: form.details.trim(),
+        status: form.status, // 👈 nuovo
         media,
       };
 
@@ -279,7 +296,7 @@ export default function Admin() {
       if (insErr) throw insErr;
 
       Swal.fire("Pubblicato", "Prodotto creato con successo", "success");
-      setForm(empty);
+      setForm({ ...empty, files: [] });
       if (fileInputRef.current) fileInputRef.current.value = "";
       await loadProducts();
     } catch (err) {
@@ -307,7 +324,18 @@ export default function Admin() {
     await loadProducts();
   }
 
-  /* ---------------- View: pannello sempre visibile ---------------- */
+  // Toggle rapido dello stato dalla lista
+  async function toggleStatus(id, current) {
+    const next = current === "venduto" ? "in_vendita" : "venduto";
+    const { error } = await supabase
+      .from("products")
+      .update({ status: next })
+      .eq("id", id);
+    if (error) return Swal.fire("Errore", error.message, "error");
+    await loadProducts();
+  }
+
+  /* ---------------- View ---------------- */
   return (
     <section className="container-max my-10 space-y-10">
       {/* Header animato */}
@@ -318,10 +346,9 @@ export default function Admin() {
         animate="show"
       >
         <h1 className="text-3xl md:text-4xl font-black">Admin Panel</h1>
-        {/* niente bottone Esci */}
       </motion.div>
 
-      {/* FORM PUBBLICAZIONE: pannello statico, animiamo i CAMPI */}
+      {/* FORM PUBBLICAZIONE */}
       <div className="card-surface p-6">
         <h3 className="text-xl font-black mb-4">Pubblica prodotto</h3>
         <motion.form
@@ -379,7 +406,6 @@ export default function Admin() {
                   </option>
                 ))}
               </select>
-              {/* chevron */}
               <svg
                 aria-hidden
                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-80"
@@ -438,7 +464,7 @@ export default function Admin() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, short: e.target.value }))
               }
-              className="w-full  bg-white/10 px-3 py-2 rounded-xl bg:white/10 text-white border border-white/20 outline-none"
+              className="w-full bg-white/10 px-3 py-2 rounded-xl text-white border border-white/20 outline-none"
             />
           </motion.div>
 
@@ -458,6 +484,41 @@ export default function Admin() {
             />
           </motion.div>
 
+          {/* Stato */}
+          <motion.div variants={fieldVariant} className="space-y-2">
+            <label className="text-sm text-white/70">Stato</label>
+            <div className="relative">
+              <select
+                value={form.status}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, status: e.target.value }))
+                }
+                className={[
+                  "w-full px-3 py-2 rounded-xl border outline-none pr-10",
+                  "[color-scheme:dark]",
+                  "appearance-none  bg-white/10 text-white border-white/20",
+                  "focus:border-[#28c8ff] focus:ring-2 focus:ring-[#28c8ff]/40",
+                  "hover:border-[#60efff] transition-colors duration-200",
+                  "[&>option]:bg-[#0b1324] [&>option]:text-white",
+                ].join(" ")}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <svg
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-80"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M7 10l5 5 5-5H7z" />
+              </svg>
+            </div>
+          </motion.div>
+
           {/* Dropzone + anteprime */}
           <motion.div
             variants={fieldVariant}
@@ -467,7 +528,6 @@ export default function Admin() {
               Media (immagini/video, multipli)
             </label>
 
-            {/* Dropzone con microanimazioni */}
             <motion.div
               ref={dropRef}
               className="rounded-2xl border border-dashed border-white/20 bg-white/[.04]
@@ -491,7 +551,6 @@ export default function Admin() {
               />
             </motion.div>
 
-            {/* Anteprime: AnimatePresence + layout per riordino e rimozione */}
             <AnimatePresence initial={false}>
               {form.files.length > 0 && (
                 <motion.div
@@ -535,6 +594,7 @@ export default function Admin() {
                               <img
                                 src={url}
                                 className="w-full h-full object-cover"
+                                alt="preview"
                               />
                             )}
                           </div>
@@ -551,7 +611,7 @@ export default function Admin() {
                             <button
                               type="button"
                               onClick={() => moveFile(i, +1)}
-                              className="px-2 py-1 rounded-lg bg:white/10 border border-white/20 text-white/90 text-xs"
+                              className="px-2 py-1 rounded-lg bg-white/10 border border-white/20 text-white/90 text-xs"
                               disabled={i === form.files.length - 1}
                               title="Sposta a destra"
                             >
@@ -623,20 +683,36 @@ export default function Admin() {
                 transition={{ type: "spring", stiffness: 260, damping: 20 }}
               >
                 <div className="relative aspect-[16/10] bg-[#0b1220]">
-                  {p.media?.[0]?.type === "image" ? (
-                    <img
-                      src={p.media[0].src}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <video
-                      src={p.media?.[0]?.src}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+                  <div
+                    className={`${
+                      p.status === "venduto" ? "grayscale-[0.4] opacity-90" : ""
+                    }`}
+                  >
+                    {p.media?.[0]?.type === "image" ? (
+                      <img
+                        src={p.media[0].src}
+                        className="w-full h-full object-cover"
+                        alt={p.title}
+                      />
+                    ) : (
+                      <video
+                        src={p.media?.[0]?.src}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+
+                  {/* Tag + Stato */}
                   <span className="badge badge-soft absolute left-2 top-2">
                     {p.tag}
                   </span>
+                  <StatusPill status={p.status} />
+
+                  {p.status === "venduto" && (
+                    <span className="absolute inset-x-2 bottom-2 text-center text-xs font-black tracking-widest px-2 py-1 rounded-lg bg-[#ff3b30] text-white/95 shadow">
+                      VENDUTO
+                    </span>
+                  )}
                 </div>
                 <div className="p-3">
                   <div className="flex items-center gap-2">
@@ -648,6 +724,26 @@ export default function Admin() {
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     <span className="badge badge-soft">{p.category}</span>
+
+                    {/* Toggle stato rapido */}
+                    <button
+                      onClick={() => toggleStatus(p.id, p.status)}
+                      className={`px-3 py-1.5 rounded-xl border text-white/90 hover:-translate-y-0.5 transition ${
+                        p.status === "venduto"
+                          ? "bg-[#123a22] border-white/20"
+                          : "bg-[#3d0d0d] border-white/20"
+                      }`}
+                      title={
+                        p.status === "venduto"
+                          ? "Torna in vendita"
+                          : "Segna venduto"
+                      }
+                    >
+                      {p.status === "venduto"
+                        ? "Torna in vendita"
+                        : "Segna venduto"}
+                    </button>
+
                     <button
                       onClick={() => removeProduct(p.id)}
                       className="ml-auto px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-white/90 hover:-translate-y-0.5 transition"
