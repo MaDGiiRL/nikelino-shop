@@ -1,0 +1,64 @@
+:root {
+    --bg1: #0b1220;
+    --bg2: #091021;
+    --text: #eef4ff;
+    --muted: #afbdd2;
+    --card: #0c1529;
+    --card2: #0e1830;
+    --card-border: rgba(255, 255, 255, 0.10);
+    --accent: #67e8f9;
+    --accent2: #22d3ee;
+    --shadow: 0 24px 80px #000b;
+    --topnav-h: 64px;
+}
+
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    padding-top: var(--topnav-h);
+    color: var(--text);
+}
+
+
+a {
+    color: #b4f0ff;
+    text-decoration: none;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.small {
+    font-size: 13px;
+}
+
+
+/* Hero orb */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0)
+    }
+
+    50% {
+        transform: translateY(-6px)
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: .75
+    }
+
+    50% {
+        opacity: .35
+    }
+}

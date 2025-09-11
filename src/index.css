@@ -1,68 +1,154 @@
+@import "tailwindcss";
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    --bg1: #0b1220;
+    --bg2: #091021;
+    --text: #eef4ff;
+    --muted: #afbdd2;
+    --card: #0c1529;
+    --card2: #0e1830;
+    --card-border: rgba(255, 255, 255, 0.10);
+    --accent: #67e8f9;
+    --accent2: #22d3ee;
+    --shadow: 0 24px 80px #000b;
+    --topnav-h: 64px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+
+html,
+body {
+    height: 100%;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+    color: var(--text);
+    padding-top: var(--topnav-h);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+a {
+    color: #b4f0ff;
+    text-decoration: none;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+
+.container-max {
+    @apply max-w-[1200px] mx-auto px-4;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.card-surface {
+    @apply bg-gradient-to-b from-[#0b1324] to-[#0e1830] border border-white/10 rounded-2xl;
+}
+
+
+.shadow-deep {
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+}
+
+/* Bottoni */
+.btn {
+    @apply font-extrabold rounded-2xl px-4 py-3 relative overflow-hidden;
+    color: white;
+    border: 0;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    border: 1px solid #ffffff44;
+}
+
+.btn-primary {
+    @apply bg-white text-[#0a1020];
+}
+
+.btn-ghost {
+    @apply bg-transparent text-white border border-white/40;
+}
+
+/* Badge */
+.badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 border rounded-full text-xs;
+}
+
+.badge-soft {
+    @apply bg-white/10 border-white/30 text-white;
+}
+
+.badge-solid {
+    @apply bg-white text-[#111] border-0;
+}
+
+/* Sheen sui bottoni */
+.btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(110deg, transparent 0 60%, rgba(255, 255, 255, .7) 70%, transparent 80% 100%);
+    transition: transform .6s;
+}
+
+.btn:hover::after {
+    transform: translateX(120%);
+}
+
+/* Navbar/Filtri blur */
+.surface-blur {
+    background: rgba(9, 16, 33, .68);
+    backdrop-filter: blur(10px);
+}
+
+/* Reveal anim helpers */
+.reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(3px);
+}
+
+.reveal.revealed {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: opacity .6s, transform .6s, filter .6s;
+}
+
+.navbtn {
+    background: #ffffff14;
+    color: #fff;
+    border: 1px solid #ffffff26;
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 800;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.navbtn:hover {
+    transform: translateY(-2px);
+    background: #ffffff20;
+    border-color: #ffffff3a;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* animazione drawer */
+@keyframes drawer {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+.footer {
+    background:
+        radial-gradient(900px 520px at 50% -8%, rgba(103, 232, 249, .10), transparent 60%),
+        linear-gradient(120deg, var(--bg1), var(--bg2));
 }
