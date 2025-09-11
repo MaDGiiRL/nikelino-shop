@@ -12,7 +12,6 @@ const getInitials = (name = "") =>
 
 const extractStars = (text = "") => {
   const stars = (text.match(/⭐|🌟/g) || []).length;
-  // normalizza 5+ a 5
   return Math.min(stars, 5);
 };
 

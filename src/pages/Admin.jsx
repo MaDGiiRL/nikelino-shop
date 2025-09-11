@@ -2,9 +2,10 @@
 const BUCKET = "media";
 
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "../supabase/supabase-client"; // <-- se usi ../lib/supabaseClient, aggiorna qui
+import { supabase } from "../supabase/supabase-client";
 import Swal from "sweetalert2";
 
+// --- categorie e tag come prima
 const CATEGORIES = [
   "Tutte",
   "Tattoos",
@@ -17,7 +18,6 @@ const CATEGORIES = [
   "Armi",
   "Occhi Custom",
 ];
-
 const TAGS = ["Fantasy", "Modern"];
 
 const empty = {
@@ -30,30 +30,31 @@ const empty = {
   files: [], // File[]
 };
 
+// genera/recupera un id locale per cartella storage
+function ensureClientId() {
+  let id = localStorage.getItem("nikelino_client_id");
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem("nikelino_client_id", id);
+  }
+  return id;
+}
+
 export default function Admin() {
-  const [session, setSession] = useState(null);
+  // 🔔 niente session: pannello sempre visibile
+  const clientId = ensureClientId();
+
   const [form, setForm] = useState(empty);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [email, setEmail] = useState("");
 
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
-  /* ---------------- Session ---------------- */
+  // carico i prodotti all'avvio
   useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }) => setSession(data.session ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) =>
-      setSession(s)
-    );
-    return () => sub.subscription.unsubscribe();
+    loadProducts();
   }, []);
-
-  useEffect(() => {
-    if (session) loadProducts();
-  }, [session]);
 
   async function loadProducts() {
     const { data, error } = await supabase
@@ -67,26 +68,6 @@ export default function Admin() {
     setProducts(data || []);
   }
 
-  async function signIn(e) {
-    e.preventDefault();
-    if (!email) return;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: "https://nikelino-shop.vercel.app", 
-      },
-    });
-    if (error) {
-      Swal.fire("Errore", error.message, "error");
-    } else {
-      Swal.fire("Controlla la mail", "Ti ho inviato un Magic Link", "info");
-    }
-  }
-
-  async function signOut() {
-    await supabase.auth.signOut();
-  }
-
   /* ---------------- Media utils ---------------- */
   function inferIsVideo(fileOrName, mime) {
     if (mime) return /video/i.test(mime);
@@ -95,14 +76,12 @@ export default function Admin() {
     return /\.(mp4|webm|mov|m4v)$/i.test(n);
   }
 
-  // Aggiunge una lista di File al form (puoi chiamarla più volte)
   function addFiles(list) {
     if (!list || !list.length) return;
     const incoming = Array.from(list);
     setForm((f) => ({ ...f, files: [...f.files, ...incoming] }));
   }
 
-  // Rimuovi un file per indice
   function removeFile(idx) {
     setForm((f) => {
       const next = [...f.files];
@@ -111,7 +90,6 @@ export default function Admin() {
     });
   }
 
-  // Riordina: sposta item idx -> idx-1 o idx+1
   function moveFile(idx, dir) {
     setForm((f) => {
       const next = [...f.files];
@@ -123,7 +101,6 @@ export default function Admin() {
     });
   }
 
-  // Drag & drop highlight
   useEffect(() => {
     const el = dropRef.current;
     if (!el) return;
@@ -132,7 +109,6 @@ export default function Admin() {
       e.preventDefault();
       e.stopPropagation();
     }
-
     function onDragEnter(e) {
       prevent(e);
       el.classList.add("ring-2", "ring-[#28c8ff]/40");
@@ -154,7 +130,6 @@ export default function Admin() {
     el.addEventListener("dragover", onDragOver);
     el.addEventListener("dragleave", onDragLeave);
     el.addEventListener("drop", onDrop);
-
     return () => {
       el.removeEventListener("dragenter", onDragEnter);
       el.removeEventListener("dragover", onDragOver);
@@ -168,13 +143,11 @@ export default function Admin() {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        // Crea canvas quadrato 1024x1024
         const canvas = document.createElement("canvas");
         canvas.width = maxSize;
         canvas.height = maxSize;
         const ctx = canvas.getContext("2d");
 
-        // Calcolo scala (crop centrale se proporzioni diverse)
         const ratio = Math.min(img.width / maxSize, img.height / maxSize);
         const sw = maxSize * ratio;
         const sh = maxSize * ratio;
@@ -186,19 +159,16 @@ export default function Admin() {
         canvas.toBlob(
           (blob) => {
             if (!blob) return reject("Errore resize canvas");
-            // Ricreo un File per mantenere nome ed estensione coerenti
-            const ext = "webp"; // meglio usare webp per peso
+            const ext = "webp";
             const newFile = new File(
               [blob],
               file.name.replace(/\.[^.]+$/, `.${ext}`),
-              {
-                type: `image/${ext}`,
-              }
+              { type: `image/${ext}` }
             );
             resolve(newFile);
           },
           "image/webp",
-          0.9 // qualità
+          0.9
         );
       };
       img.onerror = reject;
@@ -208,7 +178,6 @@ export default function Admin() {
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (!session) return Swal.fire("Ops", "Devi essere autenticato", "warning");
 
     if (!form.title.trim())
       return Swal.fire("Attenzione", "Titolo obbligatorio", "warning");
@@ -222,21 +191,18 @@ export default function Admin() {
       for (const file of form.files) {
         let uploadFile = file;
 
-        // Resize solo per immagini
         if (!inferIsVideo(file, file.type)) {
           uploadFile = await resizeImage(file, 1024);
         }
 
         const ext = uploadFile.name.split(".").pop();
-        const path = `${session.user.id}/${Date.now()}-${Math.random()
+        const path = `${clientId}/${Date.now()}-${Math.random()
           .toString(36)
           .slice(2)}.${ext}`;
 
         const { error: upErr } = await supabase.storage
           .from(BUCKET)
-          .upload(path, uploadFile, {
-            upsert: false,
-          });
+          .upload(path, uploadFile, { upsert: false });
         if (upErr) throw upErr;
 
         const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -246,7 +212,6 @@ export default function Admin() {
         });
       }
 
-      // Insert prodotto
       const payload = {
         title: form.title.trim(),
         price: form.price.trim(),
@@ -289,40 +254,12 @@ export default function Admin() {
     await loadProducts();
   }
 
-  /* ---------------- Views ---------------- */
-  if (!session) {
-    return (
-      <section className="container-max my-10">
-        <div className="card-surface p-6 max-w-md mx-auto space-y-4">
-          <h2 className="text-2xl font-black">Admin</h2>
-          <p className="text-white/70">
-            Accedi con il tuo indirizzo email per ricevere un magic link.
-          </p>
-          <form onSubmit={signIn} className="space-y-3">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tuo@email.com"
-              className="w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
-            />
-            <button type="submit" className="btn btn-primary w-full">
-              Invia magic link
-            </button>
-          </form>
-        </div>
-      </section>
-    );
-  }
-
+  /* ---------------- View: pannello sempre visibile ---------------- */
   return (
     <section className="container-max my-10 space-y-10">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl md:text-4xl font-black">Admin Panel</h1>
-        <button onClick={signOut} className="btn btn--ghost btn-ghost">
-          Esci
-        </button>
+        {/* niente bottone Esci */}
       </div>
 
       {/* FORM PUBBLICAZIONE */}
@@ -356,7 +293,7 @@ export default function Admin() {
             />
           </div>
 
-          {/* Categoria (SELECT) */}
+          {/* Categoria */}
           <div className="space-y-2">
             <label className="text-sm text-white/70">Categoria</label>
             <select
@@ -379,7 +316,7 @@ export default function Admin() {
             </select>
           </div>
 
-          {/* Tag (SELECT) */}
+          {/* Tag */}
           <div className="space-y-2">
             <label className="text-sm text-white/70">Tag</label>
             <select
@@ -432,7 +369,6 @@ export default function Admin() {
               Media (immagini/video, multipli)
             </label>
 
-            {/* Drop area */}
             <div
               ref={dropRef}
               className="rounded-2xl border border-dashed border-white/20 bg-white/[.04]
@@ -453,7 +389,6 @@ export default function Admin() {
               />
             </div>
 
-            {/* Anteprime + azioni */}
             {form.files.length > 0 && (
               <>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
@@ -480,7 +415,6 @@ export default function Admin() {
                             />
                           )}
                         </div>
-                        {/* toolbar */}
                         <div className="flex items-center gap-2 p-2 border-t border-white/10">
                           <button
                             type="button"
