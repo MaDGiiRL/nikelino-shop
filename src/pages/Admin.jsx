@@ -52,6 +52,10 @@ function formatPrice(p) {
   if (Number.isNaN(n)) return String(p);
   return `€${n.toFixed(2)}`;
 }
+/* ⬇️ arrotonda SEMPRE verso l’alto al centesimo */
+function roundUpToCents(n) {
+  return Math.ceil(n * 100) / 100;
+}
 
 /* ---------- Stato form vuoto ---------- */
 const empty = {
@@ -406,8 +410,10 @@ export default function Admin() {
       );
       const perc = Number(f.discount_percent);
       if (!base || Number.isNaN(base) || Number.isNaN(perc)) return f;
-      const newPrice = base * (1 - perc / 100);
-      return { ...f, price: formatPrice(newPrice) };
+
+      const raw = base * (1 - perc / 100);
+      const rounded = roundUpToCents(raw); // ⬅️ arrotonda per eccesso
+      return { ...f, price: formatPrice(rounded) };
     });
   }
 
@@ -579,7 +585,7 @@ export default function Admin() {
         <div
           role="tablist"
           aria-label="Admin tabs"
-          className="flex flex-wrap items-center gap-2 px-3 sm:px-4 pt-3 border-b border-white/10"
+          className="flex flex-wrap p-2 items-center gap-2 px-3 sm:px-4 pt-3 border-b border-white/10"
         >
           <button
             role="tab"
@@ -607,7 +613,7 @@ export default function Admin() {
             title="Lista prodotti online"
           >
             Lista prodotti
-            <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 rounded-lg text-[11px] font-black bg-white/10 border border-white/20">
+            <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 rounded-lg text[11px] text-[11px] font-black bg-white/10 border border-white/20">
               {stats.tot}
             </span>
           </button>
@@ -902,8 +908,9 @@ export default function Admin() {
                               <button
                                 type="button"
                                 onClick={() => removeDraft(i)}
-                                className="absolute right-2 top-2 z-10 w-7 h-7 rounded-full bg-white text-[#0a1020] font-black shadow hover:scale-105 transition"
+                                className="absolute right-2 top-2 z-10 w-7 h-7 rounded-full bg白 text-[#0a1020] font-black shadow hover:scale-105 transition"
                                 title="Rimuovi media"
+                                style={{ backgroundColor: "#fff" }}
                               >
                                 ✕
                               </button>
@@ -1188,7 +1195,7 @@ export default function Admin() {
 
                               <button
                                 onClick={() => toggleStatus(p.id, p.status)}
-                                className={`px-2.5 sm:px-3 py-1.5 rounded-xl border text-[12px] sm:text-sm text-white/90 hover:-translate-y-0.5 transition whitespace-nowrap shrink-0 ${
+                                className={`px-2.5 sm:px-3 py-1.5 rounded-xl border text-[12px] sm:text-sm text白/90 text-white/90 hover:-translate-y-0.5 transition whitespace-nowrap shrink-0 ${
                                   p.status === "venduto"
                                     ? "bg-[#123a22] border-white/20"
                                     : "bg-[#3d0d0d] border-white/20"

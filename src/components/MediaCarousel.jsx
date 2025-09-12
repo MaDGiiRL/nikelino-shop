@@ -4,11 +4,12 @@ export default function MediaCarousel({ media, index, onIndex }) {
   const viewportRef = useRef(null);
 
   useEffect(() => {
-    // focus video on change
+    // focus video su cambio index → restart da 0
     const node = viewportRef.current?.querySelector("video");
     if (node) {
       node.pause();
       node.currentTime = 0;
+      node.play().catch(() => {}); // forza il play senza blocchi
     }
   }, [index]);
 
@@ -27,7 +28,9 @@ export default function MediaCarousel({ media, index, onIndex }) {
         ) : (
           <video
             src={active.src}
-            controls
+            autoPlay
+            muted
+            loop
             playsInline
             className="w-full h-full object-cover"
           />
@@ -48,8 +51,10 @@ export default function MediaCarousel({ media, index, onIndex }) {
             ) : (
               <video
                 src={m.src}
+                autoPlay
                 muted
                 loop
+                playsInline
                 className="w-full h-full object-cover"
               />
             )}

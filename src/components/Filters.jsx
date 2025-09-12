@@ -10,7 +10,6 @@ export default function Filters({
   setTag = () => {},
   search,
   setSearch = () => {},
-  // opzionali: se non passati, uso un fallback interno
   status,
   setStatus,
 }) {
@@ -19,7 +18,7 @@ export default function Filters({
   const mainTags = ["Tutte", "Fantasy", "Modern", "Altro"];
   const otherCategories = categories;
 
-  // ===== Stato "status" robusto (fallback interno) =====
+  // Stato "status" con fallback interno
   const [internalStatus, setInternalStatus] = useState("tutti");
   const statusValue =
     typeof status === "string" && status.length ? status : internalStatus;
@@ -30,7 +29,6 @@ export default function Filters({
     if (typeof status === "string") setInternalStatus(status);
   }, [status]);
 
-  // mapping etichetta <-> valore
   const STATUS_ITEMS = [
     { label: "Tutti", value: "tutti" },
     { label: "In vendita", value: "in_vendita" },
@@ -51,25 +49,34 @@ export default function Filters({
     setStatusSafe("tutti");
   }
 
-  // blocca lo scroll della pagina quando il drawer è aperto
+  // Blocca lo scroll del body quando l’off-canvas è aperto
   useEffect(() => {
-    const html = document.documentElement;
-    if (open) html.classList.add("overflow-hidden");
-    else html.classList.remove("overflow-hidden");
-    return () => html.classList.remove("overflow-hidden");
+    if (open) {
+      document.documentElement.classList.add("overflow-hidden");
+    } else {
+      document.documentElement.classList.remove("overflow-hidden");
+    }
+    return () => document.documentElement.classList.remove("overflow-hidden");
+  }, [open]);
+
+  // Chiudi con ESC
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
   return (
-    <div className="sticky top-[64px] z-40 surface-blur border-b border-white/10">
-      <div className="container-max py-3 flex flex-col gap-3">
-        {/* DESKTOP (md+): riga 1 (chips+search a destra) */}
+    <div className="sticky top-[56px] z-40 surface-blur border-b border-white/10">
+      <div className="container-max py-2 md:py-3 flex flex-col gap-3">
+        {/* DESKTOP */}
         <div className="hidden md:flex items-center gap-3 justify-end">
           <Chips items={mainTags} value={tag} onChange={setTag} align="end" />
           <SearchBox value={search} onChange={setSearch} />
         </div>
 
-        {/* DESKTOP (md+): riga 2 (tutte le categorie centrate) */}
-        <div className="hidden md:flex justify-center mt-5">
+        <div className="hidden md:flex justify-center mt-4">
           <Tabs
             items={otherCategories}
             value={cat}
@@ -79,7 +86,6 @@ export default function Filters({
           />
         </div>
 
-        {/* DESKTOP (md+): riga 3 (stato a destra) */}
         <div className="hidden md:flex items-center justify-end mt-2">
           <Chips
             items={statusLabels}
@@ -89,7 +95,7 @@ export default function Filters({
           />
         </div>
 
-        {/* MOBILE: bottone che apre il drawer */}
+        {/* MOBILE: bottone apri off-canvas */}
         <div className="flex md:hidden items-center justify-end">
           <button
             onClick={() => setOpen(true)}
@@ -97,46 +103,63 @@ export default function Filters({
             aria-label="Apri filtri"
             aria-haspopup="dialog"
             aria-expanded={open}
-            aria-controls="filters-drawer"
+            aria-controls="filters-offcanvas"
           >
             Filtri
           </button>
         </div>
       </div>
 
-      {/* DRAWER MOBILE */}
-      {open && (
-        <>
-          {/* Overlay */}
-          <button
-            onClick={() => setOpen(false)}
-            aria-label="Chiudi filtri"
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-          />
+      {/* OFF-CANVAS MOBILE */}
+      <div
+        className={`fixed inset-0 z-[60] md:hidden transition-opacity duration-300 ${
+          open
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      >
+        {/* Overlay */}
+        <button
+          onClick={() => setOpen(false)}
+          aria-label="Chiudi filtri"
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        />
 
-          {/* Drawer */}
-          <aside
-            id="filters-drawer"
-            role="dialog"
-            aria-modal="true"
-            className="fixed left-0 top-0 z-[60] h-[100dvh] w-full sm:w-[85%] sm:max-w-[360px]
-                       bg-gradient-to-b from-[#0b1324] to-[#0e1830] border-r border-white/10
-                       shadow-deep flex flex-col"
+        {/* Pannello */}
+        <aside
+          id="filters-offcanvas"
+          role="dialog"
+          aria-modal="true"
+          className={`
+            absolute left-0 top-0 h-dvh w-full sm:w-[85%] sm:max-w-[360px]
+            bg-gradient-to-b from-[#0b1324] to-[#0e1830] border-r border-white/10 shadow-deep
+            grid grid-rows-[auto,1fr,auto]
+            transform transition-transform duration-300 ease-out
+            ${open ? "translate-x-0" : "-translate-x-full"}
+          `}
+        >
+          {/* Header (sticky) */}
+          <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-white/10">
+            <h3 className="text-lg font-bold">Filtri</h3>
+            <button
+              onClick={() => setOpen(false)}
+              className="w-9 h-9 rounded-full bg-white text-[#0a1020] font-bold"
+              title="Chiudi"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Contenuto scrollabile — altezza interna molto alta */}
+          <div
+            className="
+              min-h-0 overflow-y-auto [-webkit-overflow-scrolling:touch]
+              overscroll-contain touch-pan-y
+              p-4 space-y-6 pb-[env(safe-area-inset-bottom)]
+            "
           >
-            {/* Header drawer */}
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h3 className="text-lg font-bold">Filtri</h3>
-              <button
-                onClick={() => setOpen(false)}
-                className="w-9 h-9 rounded-full bg-white text-[#0a1020] font-bold"
-                title="Chiudi"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Contenuto scrollabile */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-[env(safe-area-inset-bottom)]">
+            {/* Wrapper “alto” per forzare tanto scroll su mobile */}
+            <div className="space-y-6 min-h-[110dvh]">
               {/* chips principali + search */}
               <div className="space-y-3">
                 <Chips
@@ -174,26 +197,24 @@ export default function Filters({
                   wrap
                 />
               </div>
+              <div className="p-4 border-t border-white/10 flex items-center gap-2">
+                <button
+                  onClick={resetAll}
+                  className="px-3 py-2 rounded-full text-sm border border-white/20 text-white/80"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="ml-auto btn btn-primary"
+                >
+                  Applica
+                </button>
+              </div>
             </div>
-
-            {/* Azioni */}
-            <div className="p-4 border-t border-white/10 flex items-center gap-2">
-              <button
-                onClick={resetAll}
-                className="px-3 py-2 rounded-full text-sm border border-white/20 text-white/80"
-              >
-                Reset
-              </button>
-              <button
-                onClick={() => setOpen(false)}
-                className="ml-auto btn btn-primary"
-              >
-                Applica
-              </button>
-            </div>
-          </aside>
-        </>
-      )}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

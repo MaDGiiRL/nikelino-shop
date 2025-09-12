@@ -11,12 +11,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import supabase from "../supabase/supabase-client";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
-import ProductModal from "../components/ProductModal"; // ⬅️ IMPORT MODALE
+import ProductModal from "../components/ProductModal";
 
 /* ---------- Animazioni ---------- */
+const pageVariant = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+};
 const pageHeaderVariant = {
   hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: "easeOut", delay: 0.05 },
+  },
 };
 const gridVariant = {
   hidden: { opacity: 0 },
@@ -99,9 +107,12 @@ function SavedProductCard({ product, onUnsave, onOpen }) {
       initial="hidden"
       animate="show"
       exit="exit"
-      onClick={() => onOpen?.(p)} // ⬅️ APRE MODALE
+      layout
+      onClick={() => onOpen?.(p)}
       role="button"
       tabIndex={0}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
     >
       <div className="relative aspect-[16/10] bg-[#0b1220]">
         <div
@@ -147,20 +158,44 @@ function SavedProductCard({ product, onUnsave, onOpen }) {
 
         <div className="mt-2 flex items-center gap-2">
           <span className="badge badge-soft">{p.category}</span>
-          <button
+          <motion.button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onUnsave?.();
-            }} // ⬅️ NON APRE MODALE
-            className="ml-auto px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-[12px] sm:text-sm text-white/90 hover:-translate-y-0.5 transition whitespace-nowrap shrink-0"
+            }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="ml-auto px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-[12px] sm:text-sm text-white/90 whitespace-nowrap shrink-0"
             title="Rimuovi dai salvati"
           >
             Rimuovi
-          </button>
+          </motion.button>
         </div>
       </div>
     </motion.article>
+  );
+}
+
+/* ---------- Skeletons ---------- */
+function LineSkeleton({ w = "w-2/3" }) {
+  return (
+    <motion.div
+      className={`h-3 ${w} rounded bg-white/10 overflow-hidden relative`}
+      initial={{ opacity: 0.6 }}
+      animate={{ opacity: [0.6, 1, 0.6] }}
+      transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+    />
+  );
+}
+function AvatarSkeleton() {
+  return (
+    <motion.div
+      className="w-24 h-24 rounded-2xl bg-white/10 border border-white/20"
+      initial={{ opacity: 0.6 }}
+      animate={{ opacity: [0.6, 1, 0.6] }}
+      transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+    />
   );
 }
 
@@ -189,7 +224,7 @@ export default function Account() {
   const [savedInfo, setSavedInfo] = useState("");
 
   // Modale prodotto
-  const [modalProduct, setModalProduct] = useState(null); // ⬅️ STATE MODALE
+  const [modalProduct, setModalProduct] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -402,9 +437,17 @@ export default function Account() {
     [profile]
   );
 
+  /* ---- Badge conteggio animato ---- */
+  const savedCount = savedProducts.length;
+
   return (
     <>
-      <section className="container-max my-6 pt-20">
+      <motion.section
+        className="container-max my-6 pt-20"
+        variants={pageVariant}
+        initial="hidden"
+        animate="show"
+      >
         {/* Header */}
         <motion.div
           className="mb-4 flex flex-wrap items-center gap-3 justify-between"
@@ -423,51 +466,39 @@ export default function Account() {
         </motion.div>
 
         {/* Card principale con Top Tabs */}
-        <div className="card-surface overflow-hidden">
+        <motion.div className="card-surface overflow-hidden" layout>
           {/* Tabs */}
           <div
             role="tablist"
             aria-label="Account tabs"
-            className="flex p-3 flex-wrap items-center gap-2 px-3 sm:px-4 pt-3 border-b border-white/10"
+            className="relative flex flex-wrap items-center gap-2 px-3 sm:px-4 pt-3 border-b border-white/10"
           >
-            <button
-              role="tab"
-              aria-selected={activeTab === "profile"}
+            <TabButton
+              active={activeTab === "profile"}
               onClick={() => setActiveTab("profile")}
-              className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition whitespace-nowrap ${
-                activeTab === "profile"
-                  ? "bg-white text-[#0a1020]"
-                  : "bg-white/10 text-white border border-white/20 hover:bg-white/15"
-              }`}
-            >
-              Dati profilo
-            </button>
-
-            <button
-              role="tab"
-              aria-selected={activeTab === "saved"}
+              label="Dati profilo"
+            />
+            <TabButton
+              active={activeTab === "saved"}
               onClick={() => setActiveTab("saved")}
-              className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition whitespace-nowrap ${
-                activeTab === "saved"
-                  ? "bg-white text-[#0a1020]"
-                  : "bg-white/10 text-white border border-white/20 hover:bg-white/15"
-              }`}
-            >
-              Articoli salvati
-              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 rounded-lg text-[11px] font-black bg-white/10 border border-white/20">
-                {savedProducts.length}
-              </span>
-            </button>
+              label={
+                <span className="inline-flex items-center gap-2">
+                  Articoli salvati
+                  <motion.span
+                    key={savedCount}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                    className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-lg text-[11px] font-black bg-white/10 border border-white/20"
+                  >
+                    {savedCount}
+                  </motion.span>
+                </span>
+              }
+            />
 
-            {profile.is_admin && (
-              <a
-                href="/admin"
-                className="ml-auto mr-2 px-3 py-2 rounded-xl text-sm font-bold bg-white/10 border border-white/20 hover:bg-white/15 transition"
-                title="Vai all'Admin"
-              >
-                Area Admin
-              </a>
-            )}
+            {/* Indicatore attivo animato */}
+            <ActiveTabUnderline activeTab={activeTab} />
           </div>
 
           {/* Contenuto Tabs */}
@@ -480,23 +511,59 @@ export default function Account() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.2 }}
+                  layout
                 >
                   {loading ? (
-                    <div className="text-white/60">Caricamento profilo…</div>
-                  ) : !user ? (
-                    <div className="text-white/70">
-                      Devi effettuare l’accesso per gestire il profilo.
+                    /* Skeleton profilo */
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                      <div className="lg:col-span-4">
+                        <div className="rounded-2xl border border-white/10 bg-white/[.03] p-4">
+                          <div className="flex items-center gap-4">
+                            <AvatarSkeleton />
+                            <div className="flex-1 min-w-0 space-y-2">
+                              <LineSkeleton w="w-1/2" />
+                              <LineSkeleton w="w-2/3" />
+                            </div>
+                          </div>
+                          <div className="mt-4 flex items-center gap-2">
+                            <LineSkeleton w="w-28" />
+                            <LineSkeleton w="w-20" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="lg:col-span-8">
+                        <div className="rounded-2xl border border-white/10 bg-white/[.03] p-4 space-y-4">
+                          <LineSkeleton w="w-full" />
+                          <LineSkeleton w="w-full" />
+                          <LineSkeleton w="w-2/3" />
+                          <div className="flex gap-2">
+                            <LineSkeleton w="w-32" />
+                            <LineSkeleton w="w-24" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  ) : !user ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-white/70"
+                    >
+                      Devi effettuare l’accesso per gestire il profilo.
+                    </motion.div>
                   ) : (
                     <form
                       onSubmit={saveProfile}
                       className="grid grid-cols-1 lg:grid-cols-12 gap-6"
                     >
                       {/* Avatar + info */}
-                      <div className="lg:col-span-4">
+                      <motion.div className="lg:col-span-4" layout>
                         <div className="rounded-2xl border border-white/10 bg-white/[.03] p-4">
                           <div className="flex items-center gap-4">
-                            <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-white/20 bg-[#0b1220]">
+                            <motion.div
+                              className="relative w-24 h-24 rounded-2xl overflow-hidden border border-white/20 bg-[#0b1220]"
+                              whileHover={{ scale: 1.02 }}
+                            >
                               {profile.avatar_url ? (
                                 <img
                                   src={profile.avatar_url}
@@ -508,7 +575,7 @@ export default function Account() {
                                   Nessun avatar
                                 </div>
                               )}
-                            </div>
+                            </motion.div>
                             <div className="flex-1 min-w-0">
                               <div className="font-black truncate">
                                 {fullName}
@@ -520,15 +587,17 @@ export default function Account() {
                           </div>
 
                           <div className="mt-4 flex items-center gap-2">
-                            <button
+                            <motion.button
                               type="button"
                               onClick={() => fileInputRef.current?.click()}
+                              whileHover={{ y: -2 }}
+                              whileTap={{ scale: 0.98 }}
                               className="px-3 py-2 rounded-xl bg-white text-[#0a1020] font-bold whitespace-nowrap"
                             >
                               Cambia avatar
-                            </button>
+                            </motion.button>
                             {profile.avatar_url && (
-                              <button
+                              <motion.button
                                 type="button"
                                 onClick={async () => {
                                   try {
@@ -542,10 +611,12 @@ export default function Account() {
                                       .eq("id", profile.id);
                                   } catch {}
                                 }}
+                                whileHover={{ y: -2 }}
+                                whileTap={{ scale: 0.98 }}
                                 className="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white/90"
                               >
                                 Rimuovi
-                              </button>
+                              </motion.button>
                             )}
                             <input
                               ref={fileInputRef}
@@ -556,17 +627,17 @@ export default function Account() {
                             />
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Form campi */}
-                      <div className="lg:col-span-8">
+                      <motion.div className="lg:col-span-8" layout>
                         <div className="rounded-2xl border border-white/10 bg-white/[.03] p-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="text-sm text-white/70">
                                 Nome
                               </label>
-                              <input
+                              <motion.input
                                 value={profile.first_name}
                                 onChange={(e) =>
                                   setProfile((p) => ({
@@ -574,6 +645,7 @@ export default function Account() {
                                     first_name: e.target.value,
                                   }))
                                 }
+                                whileFocus={{ scale: 1.01 }}
                                 className="mt-1 w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
                               />
                             </div>
@@ -581,7 +653,7 @@ export default function Account() {
                               <label className="text-sm text-white/70">
                                 Cognome
                               </label>
-                              <input
+                              <motion.input
                                 value={profile.last_name}
                                 onChange={(e) =>
                                   setProfile((p) => ({
@@ -589,6 +661,7 @@ export default function Account() {
                                     last_name: e.target.value,
                                   }))
                                 }
+                                whileFocus={{ scale: 1.01 }}
                                 className="mt-1 w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
                               />
                             </div>
@@ -596,7 +669,7 @@ export default function Account() {
                               <label className="text-sm text-white/70">
                                 Username
                               </label>
-                              <input
+                              <motion.input
                                 value={profile.username}
                                 onChange={(e) =>
                                   setProfile((p) => ({
@@ -604,29 +677,69 @@ export default function Account() {
                                     username: e.target.value,
                                   }))
                                 }
+                                whileFocus={{ scale: 1.01 }}
                                 className="mt-1 w-full px-3 py-2 rounded-xl bg-white/10 text-white border border-white/20 outline-none"
                               />
                             </div>
                           </div>
 
                           <div className="mt-4 flex items-center gap-2">
-                            <button
+                            <motion.button
                               type="submit"
                               disabled={saving}
+                              whileHover={!saving ? { y: -2 } : {}}
+                              whileTap={!saving ? { scale: 0.98 } : {}}
                               className="btn btn-primary whitespace-nowrap"
                             >
-                              {saving ? "Salvo…" : "Salva modifiche"}
-                            </button>
-                            <button
+                              <AnimatePresence initial={false} mode="wait">
+                                {saving ? (
+                                  <motion.span
+                                    key="saving"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="inline-flex items-center gap-2"
+                                  >
+                                    <motion.span
+                                      aria-hidden
+                                      className="inline-block w-4 h-4 rounded-full border-2 border-[#0a1020]"
+                                      animate={{ rotate: 360 }}
+                                      transition={{
+                                        repeat: Infinity,
+                                        duration: 0.8,
+                                        ease: "linear",
+                                      }}
+                                      style={{
+                                        borderRightColor: "transparent",
+                                      }}
+                                    />
+                                    Salvo…
+                                  </motion.span>
+                                ) : (
+                                  <motion.span
+                                    key="save"
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                  >
+                                    Salva modifiche
+                                  </motion.span>
+                                )}
+                              </AnimatePresence>
+                            </motion.button>
+
+                            <motion.button
                               type="button"
                               onClick={() => window.location.reload()}
+                              whileHover={{ y: -2 }}
+                              whileTap={{ scale: 0.98 }}
                               className="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white/90"
                             >
                               Annulla
-                            </button>
+                            </motion.button>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     </form>
                   )}
                 </motion.div>
@@ -637,46 +750,80 @@ export default function Account() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.2 }}
+                  layout
                 >
-                  {savedInfo && (
-                    <div className="mb-4 rounded-xl border border-white/15 bg-white/[.04] px-3 py-2 text-sm text-white/80">
-                      {savedInfo}
-                      {!savedTable && (
-                        <div className="mt-2 text-white/60">
-                          Crea ad esempio una tabella{" "}
-                          <code className="px-1 rounded bg-black/40">
-                            saved_items
-                          </code>{" "}
-                          con colonne:
-                          <code className="ml-1 px-1 rounded bg-black/40">
-                            id
-                          </code>
-                          ,
-                          <code className="ml-1 px-1 rounded bg-black/40">
-                            user_id
-                          </code>
-                          ,
-                          <code className="ml-1 px-1 rounded bg-black/40">
-                            product_id
-                          </code>
-                          ,
-                          <code className="ml-1 px-1 rounded bg-black/40">
-                            created_at
-                          </code>
-                          .
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {savedInfo && (
+                      <motion.div
+                        key="saved-info"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="mb-4 rounded-xl border border-white/15 bg-white/[.04] px-3 py-2 text-sm text-white/80"
+                      >
+                        {savedInfo}
+                        {!savedTable && (
+                          <div className="mt-2 text-white/60">
+                            Crea ad esempio una tabella{" "}
+                            <code className="px-1 rounded bg-black/40">
+                              saved_items
+                            </code>{" "}
+                            con colonne:
+                            <code className="ml-1 px-1 rounded bg-black/40">
+                              id
+                            </code>
+                            ,
+                            <code className="ml-1 px-1 rounded bg-black/40">
+                              user_id
+                            </code>
+                            ,
+                            <code className="ml-1 px-1 rounded bg-black/40">
+                              product_id
+                            </code>
+                            ,
+                            <code className="ml-1 px-1 rounded bg-black/40">
+                              created_at
+                            </code>
+                            .
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {savedLoading ? (
-                    <div className="text-white/60">
-                      Carico i tuoi articoli salvati…
+                    /* Skeleton salvati */
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 sm:gap-[22px]">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="overflow-hidden rounded-2xl border border-white/10 bg-white/[.03] p-3"
+                          initial={{ opacity: 0.6 }}
+                          animate={{ opacity: [0.6, 1, 0.6] }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 1.6,
+                            ease: "easeInOut",
+                            delay: i * 0.05,
+                          }}
+                        >
+                          <div className="aspect-[16/10] rounded-xl bg-white/10 mb-3" />
+                          <LineSkeleton w="w-3/4" />
+                          <div className="mt-2 flex items-center gap-2">
+                            <LineSkeleton w="w-16" />
+                            <LineSkeleton w="w-20" />
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
                   ) : savedProducts.length === 0 ? (
-                    <div className="text-white/70">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-white/70"
+                    >
                       Non hai ancora salvato nessun articolo.
-                    </div>
+                    </motion.div>
                   ) : (
                     <motion.div
                       className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 sm:gap-[22px]"
@@ -690,7 +837,7 @@ export default function Account() {
                           <SavedProductCard
                             key={p.id}
                             product={p}
-                            onOpen={(prod) => setModalProduct(prod)} // ⬅️ APRE MODALE
+                            onOpen={(prod) => setModalProduct(prod)}
                             onUnsave={async () => {
                               if (!savedTable || !user) return;
                               try {
@@ -703,7 +850,7 @@ export default function Account() {
                                   arr.filter((x) => x.id !== p.id)
                                 );
                                 if (modalProduct?.id === p.id)
-                                  setModalProduct(null); // chiudi se aperta
+                                  setModalProduct(null);
                               } catch (err) {
                                 console.error(err);
                                 Swal.fire(
@@ -722,16 +869,55 @@ export default function Account() {
               )}
             </AnimatePresence>
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
-      {/* ⬇️ MODALE PRODOTTO SALVATO */}
-      {modalProduct && (
-        <ProductModal
-          product={modalProduct}
-          onClose={() => setModalProduct(null)}
-        />
-      )}
+      {/* Modale prodotto salvato */}
+      <AnimatePresence>
+        {modalProduct && (
+          <ProductModal
+            product={modalProduct}
+            onClose={() => setModalProduct(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
+  );
+}
+
+/* ---------- Componenti UI di supporto ---------- */
+
+function TabButton({ active, onClick, label }) {
+  return (
+    <motion.button
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className={`relative px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition whitespace-nowrap ${
+        active
+          ? "bg-white text-[#0a1020]"
+          : "bg-white/10 text-white border border-white/20 hover:bg-white/15"
+      }`}
+    >
+      {label}
+    </motion.button>
+  );
+}
+
+function ActiveTabUnderline({ activeTab }) {
+  // Usa lo stesso layoutId per un underline che “salta” da un tab all’altro
+  return (
+    <div className="w-full relative mt-2">
+      <motion.div
+        layoutId="tab-underline"
+        className="h-[3px] rounded-full bg-white"
+        style={{
+          width: activeTab === "profile" ? 110 : 160, // larghezze indicative
+        }}
+        transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      />
+    </div>
   );
 }

@@ -1,14 +1,16 @@
+// src/pages/RegisterPage.jsx
 import React, { useState } from "react";
 import supabase from "../supabase/supabase-client";
+import Swal from "sweetalert2";
 import { ConfirmSchema, getErrors, getFieldError } from "../lib/validationForm";
+import LogoSpin from "../components/LogoSpin";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function RegisterPage() {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
   const [loading, setLoading] = useState(false);
-  const [serverError, setServerError] = useState("");
-  const [serverOk, setServerOk] = useState("");
 
   const [formState, setFormState] = useState({
     email: "",
@@ -18,11 +20,42 @@ export default function RegisterPage() {
     password: "",
   });
 
+  // ====== Variants Framer Motion ======
+  const pageV = {
+    hidden: { opacity: 0, y: 24 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  };
+
+  const cardV = {
+    hidden: { opacity: 0, scale: 0.95 },
+    show: {
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.4, ease: "easeOut" },
+    },
+  };
+
+  const fieldsV = {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: 0.06,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemV = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+  };
+
+  const buttonTap = { scale: 0.98, y: 1 };
+  const buttonHover = { y: -2 };
+
   const onSubmit = async (event) => {
     event.preventDefault();
     setFormSubmitted(true);
-    setServerError("");
-    setServerOk("");
 
     // 1) Validazione Zod
     const result = ConfirmSchema.safeParse(formState);
@@ -34,7 +67,7 @@ export default function RegisterPage() {
     try {
       setLoading(true);
 
-      // 2) Pre-check username per evitare unique_violation sul trigger
+      // 2) Pre-check username per evitare unique_violation
       const { data: existing, error: unameErr } = await supabase
         .from("profiles")
         .select("id")
@@ -43,20 +76,24 @@ export default function RegisterPage() {
 
       if (unameErr) {
         console.error("[Supabase] Username check error:", unameErr);
-        // non blocco, ma segnalo
       }
       if (existing) {
         setFormErrors((prev) => ({ ...prev, username: "Username già in uso" }));
+        await Swal.fire({
+          icon: "warning",
+          title: "Username già in uso",
+          text: "Scegline un altro.",
+        });
         setLoading(false);
         return;
       }
 
-      // 3) Signup — aggiungi emailRedirectTo se la conferma email è attiva
+      // 3) Signup
       const { data, error } = await supabase.auth.signUp({
         email: formState.email,
         password: formState.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`, // importante se Email Confirmations è ON
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             username: formState.username,
             first_name: formState.firstName,
@@ -66,7 +103,6 @@ export default function RegisterPage() {
         },
       });
 
-      // ---- LOG DIAGNOSTICO COMPLETO ----
       console.log("[Supabase] signUp response:", {
         data,
         error,
@@ -75,29 +111,40 @@ export default function RegisterPage() {
       });
 
       if (error) {
-        // Messaggi chiari per i casi più comuni
-        if (/rate limit|rate_limit/i.test(error.message)) {
-          setServerError("Limite email raggiunto: riprova fra poco.");
-        } else if (/invalid redirect/i.test(error.message)) {
-          setServerError(
-            "Redirect URL non autorizzato nelle impostazioni Auth."
-          );
-        } else if (/duplicate|unique/i.test(error.message)) {
-          setServerError("Username già in uso.");
-        } else {
-          setServerError(error.message || "Errore durante la registrazione");
+        let msg =
+          error.message ||
+          "Errore durante la registrazione. Riprova più tardi.";
+        if (/rate limit|rate_limit/i.test(msg)) {
+          msg = "Limite email raggiunto: riprova fra poco.";
+        } else if (/invalid redirect/i.test(msg)) {
+          msg = "Redirect URL non autorizzato nelle impostazioni Auth.";
+        } else if (/duplicate|unique/i.test(msg)) {
+          msg = "Username già in uso.";
         }
+
+        await Swal.fire({
+          icon: "error",
+          title: "Registrazione fallita",
+          text: msg,
+        });
         return;
       }
 
-      // NB: con conferma email attiva, data.user c’è ma data.session è null
-      setServerOk(
-        "Registrazione riuscita! Controlla l'email per confermare l'account."
-      );
-      setFormErrors({});
+      await Swal.fire({
+        icon: "success",
+        title: "Registrazione riuscita!",
+        text: "Benvenuto! Verrai reindirizzato alla Home.",
+        confirmButtonText: "Vai alla Home",
+      });
+
+      window.location.replace("/");
     } catch (err) {
       console.error("[Supabase] signUp exception:", err);
-      setServerError(err.message || "Errore durante la registrazione");
+      await Swal.fire({
+        icon: "error",
+        title: "Errore imprevisto",
+        text: err.message || "Qualcosa è andato storto. Riprova.",
+      });
     } finally {
       setLoading(false);
     }
@@ -114,6 +161,7 @@ export default function RegisterPage() {
       return !!formErrors[property];
     }
     return undefined;
+    // (undefined evita aria-invalid="false")
   };
 
   const setField = (property, valueSelector) => (e) => {
@@ -124,31 +172,55 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="container-max px-4 py-10 md:pt-50 pt-20">
-      <div className="mx-auto max-w-md rounded-2xl border border-white/15 bg-white/5 backdrop-blur p-6 shadow-xl">
-        <h1 className="text-xl font-extrabold text-white mb-4">
+    <motion.div
+      className="container-max px-4 py-10 md:pt-50 pt-20"
+      variants={pageV}
+      initial="hidden"
+      animate="show"
+    >
+      <motion.div
+        variants={cardV}
+        initial="hidden"
+        animate="show"
+        className="mx-auto max-w-md rounded-2xl border border-white/15 bg-white/5 backdrop-blur p-6 shadow-xl"
+      >
+        {/* Logo con leggero float verticale */}
+        <motion.div
+          initial={{ y: -6, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="mb-4"
+        >
+          <LogoSpin />
+        </motion.div>
+
+        <motion.h1
+          className="text-xl font-extrabold text-white mb-4 text-center"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
           Crea un account
-        </h1>
+        </motion.h1>
 
-        {serverError && (
-          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-            {serverError}
-          </div>
-        )}
-        {serverOk && (
-          <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
-            {serverOk}
-          </div>
-        )}
-
-        <form onSubmit={onSubmit} noValidate className="grid gap-3">
-          <label
+        <motion.form
+          onSubmit={onSubmit}
+          noValidate
+          className="grid gap-3"
+          variants={fieldsV}
+          initial="hidden"
+          animate="show"
+        >
+          {/* Email */}
+          <motion.label
+            variants={itemV}
             htmlFor="email"
             className="text-sm font-semibold text-white/80"
           >
             Email:
-          </label>
-          <input
+          </motion.label>
+          <motion.input
+            variants={itemV}
             type="email"
             id="email"
             name="email"
@@ -157,19 +229,33 @@ export default function RegisterPage() {
             onBlur={onBlur("email")}
             aria-invalid={isInvalid("email")}
             required
+            whileFocus={{ scale: 1.01 }}
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
           />
-          {formErrors.email && (
-            <small className="text-red-300">{formErrors.email}</small>
-          )}
+          <AnimatePresence mode="popLayout">
+            {formErrors.email && (
+              <motion.small
+                key="err-email"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-red-300"
+              >
+                {formErrors.email}
+              </motion.small>
+            )}
+          </AnimatePresence>
 
-          <label
+          {/* First Name */}
+          <motion.label
+            variants={itemV}
             htmlFor="firstName"
             className="text-sm font-semibold text-white/80"
           >
             First Name:
-          </label>
-          <input
+          </motion.label>
+          <motion.input
+            variants={itemV}
             type="text"
             id="firstName"
             name="firstName"
@@ -178,19 +264,33 @@ export default function RegisterPage() {
             onBlur={onBlur("firstName")}
             aria-invalid={isInvalid("firstName")}
             required
+            whileFocus={{ scale: 1.01 }}
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
           />
-          {formErrors.firstName && (
-            <small className="text-red-300">{formErrors.firstName}</small>
-          )}
+          <AnimatePresence mode="popLayout">
+            {formErrors.firstName && (
+              <motion.small
+                key="err-firstName"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-red-300"
+              >
+                {formErrors.firstName}
+              </motion.small>
+            )}
+          </AnimatePresence>
 
-          <label
+          {/* Last Name */}
+          <motion.label
+            variants={itemV}
             htmlFor="lastName"
             className="text-sm font-semibold text-white/80"
           >
             Last Name:
-          </label>
-          <input
+          </motion.label>
+          <motion.input
+            variants={itemV}
             type="text"
             id="lastName"
             name="lastName"
@@ -199,19 +299,33 @@ export default function RegisterPage() {
             onBlur={onBlur("lastName")}
             aria-invalid={isInvalid("lastName")}
             required
+            whileFocus={{ scale: 1.01 }}
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
           />
-          {formErrors.lastName && (
-            <small className="text-red-300">{formErrors.lastName}</small>
-          )}
+          <AnimatePresence mode="popLayout">
+            {formErrors.lastName && (
+              <motion.small
+                key="err-lastName"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-red-300"
+              >
+                {formErrors.lastName}
+              </motion.small>
+            )}
+          </AnimatePresence>
 
-          <label
+          {/* Username */}
+          <motion.label
+            variants={itemV}
             htmlFor="username"
             className="text-sm font-semibold text-white/80"
           >
             Username:
-          </label>
-          <input
+          </motion.label>
+          <motion.input
+            variants={itemV}
             type="text"
             id="username"
             name="username"
@@ -220,19 +334,33 @@ export default function RegisterPage() {
             onBlur={onBlur("username")}
             aria-invalid={isInvalid("username")}
             required
+            whileFocus={{ scale: 1.01 }}
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
           />
-          {formErrors.username && (
-            <small className="text-red-300">{formErrors.username}</small>
-          )}
+          <AnimatePresence mode="popLayout">
+            {formErrors.username && (
+              <motion.small
+                key="err-username"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-red-300"
+              >
+                {formErrors.username}
+              </motion.small>
+            )}
+          </AnimatePresence>
 
-          <label
+          {/* Password */}
+          <motion.label
+            variants={itemV}
             htmlFor="password"
             className="text-sm font-semibold text-white/80"
           >
             Password:
-          </label>
-          <input
+          </motion.label>
+          <motion.input
+            variants={itemV}
             type="password"
             id="password"
             name="password"
@@ -241,21 +369,68 @@ export default function RegisterPage() {
             onBlur={onBlur("password")}
             aria-invalid={isInvalid("password")}
             required
+            whileFocus={{ scale: 1.01 }}
             className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
           />
-          {formErrors.password && (
-            <small className="text-red-300">{formErrors.password}</small>
-          )}
+          <AnimatePresence mode="popLayout">
+            {formErrors.password && (
+              <motion.small
+                key="err-password"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-red-300"
+              >
+                {formErrors.password}
+              </motion.small>
+            )}
+          </AnimatePresence>
 
-          <button
+          {/* Submit */}
+          <motion.button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-xl bg-white text-[#0a1020] font-extrabold px-4 py-2 hover:-translate-y-0.5 transition disabled:opacity-60"
+            variants={itemV}
+            whileHover={!loading ? buttonHover : {}}
+            whileTap={!loading ? buttonTap : {}}
+            className="mt-2 rounded-xl bg-white text-[#0a1020] font-extrabold px-4 py-2 hover:-translate-y-0.5 transition disabled:opacity-60 inline-flex items-center justify-center gap-2"
           >
-            {loading ? "Invio…" : "Sign Up"}
-          </button>
-        </form>
-      </div>
-    </div>
+            <AnimatePresence initial={false} mode="wait">
+              {loading ? (
+                <motion.span
+                  key="sending"
+                  className="inline-flex items-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.span
+                    aria-hidden
+                    className="inline-block w-4 h-4 rounded-full border-2 border-[#0a1020]"
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 0.8,
+                      ease: "linear",
+                    }}
+                    style={{ borderRightColor: "transparent" }}
+                  />
+                  Invio…
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="signup"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                >
+                  Sign Up
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </motion.form>
+      </motion.div>
+    </motion.div>
   );
 }

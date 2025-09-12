@@ -2,6 +2,23 @@ import { useEffect, useState } from "react";
 import MediaCarousel from "./MediaCarousel";
 import { Badge, BadgeSolid } from "./Badges";
 
+/* --- helper numeri e formattazione --- */
+function priceToNumber(v) {
+  if (v == null || v === "") return NaN;
+  const n = String(v)
+    .replace(/[^\d.,-]/g, "")
+    .replace(",", ".");
+  const f = parseFloat(n);
+  return Number.isNaN(f) ? NaN : f;
+}
+function roundUpToEuros(n) {
+  return Math.ceil(n);
+}
+function formatEuroNoCents(n) {
+  if (n == null || Number.isNaN(n)) return "";
+  return `€${Math.trunc(n)}`;
+}
+
 function StatusBadge({ status }) {
   if (!status) return null;
   const isSold = status === "venduto";
@@ -41,6 +58,10 @@ export default function ProductModal({ product, onClose }) {
   const isSold = product.status === "venduto";
   const showDiscount = product.is_discounted && product.old_price;
 
+  // ⬇️ prezzo scontato arrotondato per eccesso all’euro, senza centesimi
+  const discountedRounded = roundUpToEuros(priceToNumber(product.price));
+  const displayDiscounted = formatEuroNoCents(discountedRounded);
+
   return (
     // ⬇️ wrapper full-screen scrollabile su mobile
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -61,11 +82,11 @@ export default function ProductModal({ product, onClose }) {
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        {/* Close */}
+        {/* Close DESKTOP */}
         <button
           aria-label="Chiudi"
           onClick={onClose}
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white text-black shadow hover:scale-105 transition"
+          className="hidden md:block absolute top-3 right-3 w-9 h-9 rounded-full bg-white text-black shadow hover:scale-105 transition"
         >
           ✕
         </button>
@@ -74,6 +95,15 @@ export default function ProductModal({ product, onClose }) {
         <div className="flex flex-col border-b md:border-b-0 md:border-r border-white/10">
           {/* Media */}
           <div className="relative flex-1 min-h-[260px]">
+            {/* Close MOBILE */}
+            <button
+              aria-label="Chiudi"
+              onClick={onClose}
+              className="md:hidden absolute top-2 right-2 z-20 w-10 h-10 rounded-full bg-white text-black shadow hover:scale-105 transition"
+            >
+              ✕
+            </button>
+
             <MediaCarousel
               media={product.media}
               index={index}
@@ -86,7 +116,7 @@ export default function ProductModal({ product, onClose }) {
                   type="button"
                   onClick={prev}
                   aria-label="Immagine precedente"
-                  className="absolute left-3 top-40 translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/55 text-white backdrop-blur ring-1 ring-white/20 hover:ring-white/40 transition focus:outline-none focus:ring-2 focus:ring-white/70"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/55 text-white backdrop-blur ring-1 ring-white/20 hover:ring-white/40 transition focus:outline-none focus:ring-2 focus:ring-white/70"
                 >
                   <svg
                     viewBox="0 0 16 16"
@@ -104,7 +134,7 @@ export default function ProductModal({ product, onClose }) {
                   type="button"
                   onClick={next}
                   aria-label="Immagine successiva"
-                  className="absolute right-3 top-40 translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/55 text-white backdrop-blur ring-1 ring-white/20 hover:ring-white/40 transition focus:outline-none focus:ring-2 focus:ring-white/70"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/55 text-white backdrop-blur ring-1 ring-white/20 hover:ring-white/40 transition focus:outline-none focus:ring-2 focus:ring-white/70"
                 >
                   <svg
                     viewBox="0 0 16 16"
@@ -141,7 +171,7 @@ export default function ProductModal({ product, onClose }) {
                   <span className="line-through opacity-70 text-xl">
                     {product.old_price}
                   </span>
-                  <span className="text-emerald-300">{product.price}</span>
+                  <span className="text-emerald-300">{displayDiscounted}</span>
                   {product.discount_percent ? (
                     <span className="text-xs font-black px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-200 border border-emerald-400/30">
                       -{product.discount_percent}%
@@ -149,7 +179,7 @@ export default function ProductModal({ product, onClose }) {
                   ) : null}
                 </>
               ) : (
-                <>{product.price} €</>
+                <>{product.price}</>
               )}
             </span>
           </div>
@@ -157,7 +187,6 @@ export default function ProductModal({ product, onClose }) {
 
         {/* Info */}
         <div className="p-6 md:p-7 md:overflow-y-auto">
-          {/* Badges ben distanziati */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
             <Badge>{product.category}</Badge>
             <BadgeSolid>{product.tag}</BadgeSolid>
@@ -170,7 +199,6 @@ export default function ProductModal({ product, onClose }) {
             {product.details}
           </p>
 
-          {/* CTA */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <a
               className={`btn ${

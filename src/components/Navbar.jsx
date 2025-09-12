@@ -4,6 +4,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import SessionContext from "../context/SessionContext";
 import supabase from "../supabase/supabase-client"; // default export
+import Swal from "sweetalert2"; // ⬅️ Aggiunto
 
 // Link base
 const linkBase =
@@ -110,10 +111,40 @@ export default function Navbar() {
   }, []);
 
   const handleSignOut = async () => {
+    setProfileOpen(false);
+
+    // Conferma logout
+    const confirm = await Swal.fire({
+      icon: "question",
+      title: "Esci dall'account?",
+      text: "Confermi il logout dal tuo account?",
+      showCancelButton: true,
+      confirmButtonText: "Esci",
+      cancelButtonText: "Annulla",
+      reverseButtons: true,
+    });
+
+    if (!confirm.isConfirmed) return;
+
     try {
-      await supabase.auth.signOut();
-    } finally {
-      setProfileOpen(false);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      await Swal.fire({
+        icon: "success",
+        title: "Disconnesso",
+        text: "Sei stato disconnesso correttamente.",
+        confirmButtonText: "OK",
+      });
+
+      // Redirect Home
+      window.location.replace("/");
+    } catch (err) {
+      await Swal.fire({
+        icon: "error",
+        title: "Errore logout",
+        text: err.message || "Impossibile effettuare il logout. Riprova.",
+      });
     }
   };
 

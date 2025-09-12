@@ -1,24 +1,27 @@
-// components/ProductCard.jsx
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import supabase from "../supabase/supabase-client";
 import Swal from "sweetalert2";
 
-const SAVED_TABLE_CANDIDATES = [
-  "saved_items",
-  "favorites",
-  "bookmarks",
-  "wishlists",
-];
+const SAVED_TABLE_CANDIDATES = ["saved_items", "favorites", "bookmarks", "wishlists"];
 
 /* helper robusto per numeri prezzo (con € o virgole) */
 function priceToNumber(v) {
   if (v == null || v === "") return NaN;
-  const n = String(v)
-    .replace(/[^\d.,-]/g, "")
-    .replace(",", ".");
+  const n = String(v).replace(/[^\d.,-]/g, "").replace(",", ".");
   const f = parseFloat(n);
   return Number.isNaN(f) ? NaN : f;
+}
+
+/* ⬇️ arrotonda SEMPRE verso l’alto all’EURO */
+function roundUpToEuros(n) {
+  return Math.ceil(n);
+}
+
+/* ⬇️ formatta come €XX (senza centesimi) */
+function formatEuroNoCents(n) {
+  if (n == null || Number.isNaN(n)) return "";
+  return `€${Math.trunc(n)}`;
 }
 
 function StatusPill({ status }) {
@@ -26,9 +29,7 @@ function StatusPill({ status }) {
   return (
     <span
       className={`badge absolute right-2 top-2 select-none ${
-        isSold
-          ? "bg-[#fd6058fb] text-white border border-white/20"
-          : "bg-[#123a22] text-[#a7ffcb] border border-white/20"
+        isSold ? "bg-[#fd6058fb] text-white border border-white/20" : "bg-[#123a22] text-[#a7ffcb] border border-white/20"
       }`}
       title={isSold ? "Venduto" : "In vendita"}
     >
@@ -39,24 +40,32 @@ function StatusPill({ status }) {
 }
 
 export default function ProductCard({ p, onClick, index }) {
-  // Deriva info sconto da vari campi possibili
-  const priceNum = priceToNumber(p.price);
-  const oldNum = priceToNumber(p.old_price);
-  const hasOld = !Number.isNaN(oldNum) && oldNum > 0;
+  // Numeri grezzi
+  const priceRaw = priceToNumber(p.price);
+  const oldRaw = priceToNumber(p.old_price);
+
+  // Prezzo SCONTATO arrotondato per eccesso all’euro (solo display)
+  const priceRoundedEuro = Number.isNaN(priceRaw) ? NaN : roundUpToEuros(priceRaw);
+  const hasOld = !Number.isNaN(oldRaw) && oldRaw > 0;
+  const hasPrice = !Number.isNaN(priceRoundedEuro);
+
+  // % sconto coerente con il prezzo arrotondato (visibile all’utente)
   const computedPercent =
-    !Number.isNaN(priceNum) && hasOld && oldNum > priceNum
-      ? Math.round(((oldNum - priceNum) / oldNum) * 100)
+    hasPrice && hasOld && oldRaw > priceRoundedEuro
+      ? Math.round(((oldRaw - priceRoundedEuro) / oldRaw) * 100)
       : null;
 
   const discountPercent =
-    typeof p?.discount_percent === "number"
-      ? p.discount_percent
-      : computedPercent;
+    typeof p?.discount_percent === "number" ? p.discount_percent : computedPercent;
 
   const hasDiscount =
     (!!p?.is_discounted || hasOld || typeof p?.discount_percent === "number") &&
     ((discountPercent != null && discountPercent > 0) ||
-      (hasOld && !Number.isNaN(priceNum) && priceNum < oldNum));
+      (hasOld && hasPrice && priceRoundedEuro < oldRaw));
+
+  // Valori da mostrare
+  const displayPrice = hasDiscount && hasPrice ? formatEuroNoCents(priceRoundedEuro) : p.price; // solo scontati senza cent
+  const displayOld = hasOld ? p.old_price : p.old_price; // vecchio prezzo lasciato com’è
 
   // --- Salvataggio ---
   const [userId, setUserId] = useState(null);
@@ -72,16 +81,12 @@ export default function ProductCard({ p, onClick, index }) {
 
       // detect tabella
       for (const name of SAVED_TABLE_CANDIDATES) {
-        const { error, status } = await supabase
-          .from(name)
-          .select("id")
-          .limit(1);
+        const { error, status } = await supabase.from(name).select("id").limit(1);
         if (!error) {
           setSavedTable(name);
           break;
         }
         if (!(status === 404 || error?.code === "PGRST205")) {
-          // tabella forse esiste ma no permessi: usala ugualmente per i tentativi insert/delete
           setSavedTable(name);
           break;
         }
@@ -116,9 +121,7 @@ export default function ProductCard({ p, onClick, index }) {
     setSaving(true);
     try {
       if (!isSaved) {
-        const { error } = await supabase
-          .from(table)
-          .insert({ user_id: userId, product_id: p.id });
+        const { error } = await supabase.from(table).insert({ user_id: userId, product_id: p.id });
         if (error) throw error;
         setIsSaved(true);
       } else {
@@ -132,11 +135,7 @@ export default function ProductCard({ p, onClick, index }) {
       }
     } catch (err) {
       console.error(err);
-      Swal.fire(
-        "Errore",
-        "Operazione non riuscita. Controlla la tabella dei salvati e le policy RLS.",
-        "error"
-      );
+      Swal.fire("Errore", "Operazione non riuscita. Controlla la tabella dei salvati e le policy RLS.", "error");
     } finally {
       setSaving(false);
     }
@@ -161,11 +160,7 @@ export default function ProductCard({ p, onClick, index }) {
             className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <video
-            src={media0?.src}
-            muted
-            className="w-full h-full object-cover"
-          />
+          <video src={media0?.src} muted className="w-full h-full object-cover" />
         )}
 
         <span className="badge badge-soft absolute left-2 top-2">{p.tag}</span>
@@ -184,18 +179,9 @@ export default function ProductCard({ p, onClick, index }) {
           disabled={saving}
           title={isSaved ? "Rimuovi dai salvati" : "Salva articolo"}
           className={`absolute right-2 bottom-2 grid place-items-center w-9 h-9 rounded-xl border transition 
-            ${
-              isSaved
-                ? "bg-white text-[#0a1020] border-white/20"
-                : "bg-white/10 text-white border-white/20 hover:bg-white/15"
-            }`}
+            ${isSaved ? "bg-white text-[#0a1020] border-white/20" : "bg-white/10 text-white border-white/20 hover:bg-white/15"}`}
         >
-          {/* icona cuore */}
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className={`w-5 h-5 ${isSaved ? "" : "opacity-90"}`}
-          >
+          <svg viewBox="0 0 24 24" fill="currentColor" className={`w-5 h-5 ${isSaved ? "" : "opacity-90"}`}>
             <path d="M11.645 20.91l-.007-.003-.022-.01a20.55 20.55 0 01-1.078-.58 25.18 25.18 0 01-4.244-3.017C3.852 15.04 2.25 12.886 2.25 10.5 2.25 7.42 4.714 5 7.688 5A5.5 5.5 0 0112 7.052 5.5 5.5 0 0116.313 5c2.973 0 5.437 2.42 5.437 5.5 0 2.386-1.602 4.54-4.044 6.8a25.18 25.18 0 01-4.244 3.017 20.55 20.55 0 01-1.078.58l-.022.01-.007.003a.75.75 0 01-.546 0z" />
           </svg>
         </button>
@@ -205,13 +191,13 @@ export default function ProductCard({ p, onClick, index }) {
         <div className="flex items-center gap-2">
           <div className="font-black truncate capitalize">{p.title}</div>
           <div className="ml-auto font-black shrink-0 whitespace-nowrap">
-            {hasDiscount && p.old_price ? (
+            {hasDiscount && hasOld ? (
               <div className="flex items-baseline gap-2">
-                <span className="line-through opacity-70">{p.old_price}</span>
-                <span className="text-emerald-300">{p.price}</span>
+                <span className="line-through opacity-70">{displayOld}</span>
+                <span className="text-emerald-300">{displayPrice}</span>
               </div>
             ) : (
-              <span>{p.price}</span>
+              <span>{hasPrice ? displayPrice : p.price}</span>
             )}
           </div>
         </div>

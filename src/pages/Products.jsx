@@ -18,7 +18,7 @@ const STATIC_CATEGORIES = [
   "Armi",
   "Occhi Custom",
   "Grafiche",
-  "Pack"
+  "Pack",
 ];
 
 // Variants
@@ -49,7 +49,7 @@ export default function Products() {
   const [cat, setCat] = useState("Tutte");
   const [tag, setTag] = useState("Tutte");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("tutti"); // ⬅️ NEW
+  const [status, setStatus] = useState("tutti");
   const [open, setOpen] = useState(null);
   const [all, setAll] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,6 @@ export default function Products() {
       .filter((p) => tag === "Tutte" || p.tag === tag)
       .filter((p) => {
         if (status === "tutti") return true;
-        // fallback: se manca status nel record, consideralo "in_vendita"
         const s = p.status || "in_vendita";
         return s === status;
       })
@@ -89,7 +88,7 @@ export default function Products() {
           (p.short && p.short.toLowerCase().includes(q)) ||
           (p.details && p.details.toLowerCase().includes(q))
       );
-  }, [all, cat, tag, status, search]); // ⬅️ aggiunto "status" nelle deps
+  }, [all, cat, tag, status, search]);
 
   function handleOpen(p) {
     setOpen(p);
@@ -112,9 +111,9 @@ export default function Products() {
   }
 
   return (
-    <section className="pt-20">
+    <section className="pt-16 md:pt-20">
       <motion.h1
-        className="text-4xl md:text-5xl font-black text-center py-5"
+        className="text-3xl md:text-5xl font-black text-center py-2 md:py-5"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
@@ -135,7 +134,6 @@ export default function Products() {
           setTag={setTag}
           search={search}
           setSearch={setSearch}
-          // ⬇️ passa lo stato allo UI filter
           status={status}
           setStatus={setStatus}
         />
