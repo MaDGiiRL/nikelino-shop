@@ -28,7 +28,7 @@ Il design e la palette colori sono stati ideati da **Nikelino**, mentre lo svilu
 
 ## 👥 Crediti
 - 🎨 **Design & palette colori:** [Nikelino]  
-- 💻 **Sviluppo e implementazione:** [Tuo nome]  
+- 💻 **Sviluppo e implementazione:** [MaDGiiRL]  
 
 ---
 
