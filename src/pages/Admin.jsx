@@ -134,11 +134,26 @@ function StatusPill({ status }) {
 
 /* ---------- Utils media ---------- */
 function inferIsVideo(fileOrName, mime) {
-  if (mime) return /video/i.test(mime);
+  if (mime && /^video\//i.test(mime)) return true;
   const n =
     typeof fileOrName === "string" ? fileOrName : fileOrName?.name || "";
-  return /\.(mp4|webm|mov|m4v)$/i.test(n);
+  return /\.(mp4|webm|mov|m4v|avi|mkv|wmv|flv|mpeg|mpg|3gp|ogv|ogg)$/i.test(n);
 }
+
+// Whitelist immagini consentite
+const ALLOWED_IMAGE_MIMES = new Set([
+  "image/jpeg", // .jpg, .jpeg
+  "image/png",
+  "image/gif", // GIF animate
+  "image/webp",
+]);
+const ALLOWED_IMAGE_EXTS = /\.(jpe?g|png|gif|webp)$/i;
+
+function isAllowedImage(file) {
+  if (ALLOWED_IMAGE_MIMES.has(file.type)) return true;
+  return ALLOWED_IMAGE_EXTS.test(file.name || "");
+}
+
 function ensureClientId() {
   let id = localStorage.getItem("nikelino_client_id");
   if (!id) {
@@ -272,16 +287,41 @@ export default function Admin() {
   /* ---------- File & MediaDraft ops ---------- */
   function addFiles(list) {
     if (!list || !list.length) return;
-    const incoming = Array.from(list).map((file) => {
+
+    const incoming = [];
+    const rejected = [];
+
+    Array.from(list).forEach((file) => {
       const isVideo = inferIsVideo(file, file.type);
-      return {
-        id: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        type: isVideo ? "video" : "image",
-        file, // 🔸 video accettati a qualsiasi dimensione (nessun resize lato client)
-        preview: URL.createObjectURL(file),
-      };
+      const isImage =
+        /^image\//i.test(file.type) || ALLOWED_IMAGE_EXTS.test(file.name || "");
+
+      // Accetta: qualsiasi video; immagini solo se nella whitelist
+      if (isVideo || (isImage && isAllowedImage(file))) {
+        incoming.push({
+          id: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          type: isVideo ? "video" : "image",
+          file,
+          preview: URL.createObjectURL(file),
+        });
+      } else {
+        rejected.push(file.name || "file");
+      }
     });
-    setMediaDraft((cur) => [...cur, ...incoming]);
+
+    if (rejected.length) {
+      Swal.fire(
+        "Formato non supportato",
+        `Sono stati ignorati i seguenti file:\n\n• ${rejected.join(
+          "\n• "
+        )}\n\nImmagini consentite: JPEG/JPG, PNG, GIF, WEBP. Video: tutti i formati principali.`,
+        "warning"
+      );
+    }
+
+    if (incoming.length) {
+      setMediaDraft((cur) => [...cur, ...incoming]);
+    }
   }
 
   function removeDraft(idx) {
@@ -431,11 +471,18 @@ export default function Admin() {
       const finalMedia = [];
       for (const item of mediaDraft) {
         if (item.file) {
-          // upload nuovi — immagini ridimensionate, VIDEO lasciati a dimensione originale
           let uploadFile = item.file;
+
           if (item.type === "image") {
-            uploadFile = await resizeImage(item.file, 1024);
+            // Non ridimensionare le GIF per preservare l’animazione
+            const isGif =
+              item.file.type === "image/gif" ||
+              /\.gif$/i.test(item.file.name || "");
+            if (!isGif) {
+              uploadFile = await resizeImage(item.file, 1024);
+            }
           }
+
           const ext = uploadFile.name.split(".").pop();
           const path = `${clientId}/${Date.now()}-${Math.random()
             .toString(36)
@@ -860,11 +907,15 @@ export default function Admin() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/*,video/*"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/*"
                         multiple
                         onChange={(e) => addFiles(e.target.files)}
                         className="hidden"
                       />
+                      <p className="text-white/50 text-xs mt-2">
+                        Formati supportati: JPEG/JPG, PNG, GIF (animate
+                        preservate), WEBP e tutti i video principali.
+                      </p>
                     </motion.div>
 
                     {/* Gestione media: ordine / cover / rimozione */}
