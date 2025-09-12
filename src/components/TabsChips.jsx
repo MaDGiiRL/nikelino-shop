@@ -1,6 +1,11 @@
-import { div } from "framer-motion/client";
-
-export function Tabs({ items, value, onChange, center = false, wrap = false }) {
+export function Tabs({
+  items = [],
+  value,
+  onChange,
+  center = false,
+  wrap = false,
+}) {
+  const onChangeSafe = typeof onChange === "function" ? onChange : () => {};
   const base = [
     "flex gap-2 pr-1",
     wrap ? "flex-wrap" : "overflow-x-auto no-scrollbar snap-x snap-mandatory",
@@ -15,7 +20,7 @@ export function Tabs({ items, value, onChange, center = false, wrap = false }) {
           return (
             <button
               key={c}
-              onClick={() => onChange(c)}
+              onClick={() => onChangeSafe(c)}
               className={[
                 wrap ? "" : "snap-start",
                 "px-3 py-2 rounded-full font-bold transition whitespace-nowrap",
@@ -34,12 +39,13 @@ export function Tabs({ items, value, onChange, center = false, wrap = false }) {
 }
 
 export function Chips({
-  items,
+  items = [],
   value,
   onChange,
   align = "start", // "start" | "end"
   wrap = false,
 }) {
+  const onChangeSafe = typeof onChange === "function" ? onChange : () => {};
   const base = [
     "flex gap-2",
     wrap ? "flex-wrap" : "overflow-x-auto no-scrollbar",
@@ -51,10 +57,9 @@ export function Chips({
       {items.map((t) => {
         const active = value === t;
         return (
-          <div className="py-3">
+          <div key={t} className="py-3">
             <button
-              key={t}
-              onClick={() => onChange(t)}
+              onClick={() => onChangeSafe(t)}
               className={[
                 "px-3 py-2 rounded-full font-bold transition whitespace-nowrap",
                 active

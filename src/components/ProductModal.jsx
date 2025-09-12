@@ -39,16 +39,24 @@ export default function ProductModal({ product, onClose }) {
   }, [total, onClose]);
 
   const isSold = product.status === "venduto";
+  const showDiscount = product.is_discounted && product.old_price;
 
   return (
-    <div className="fixed inset-0 z-50">
+    // ⬇️ wrapper full-screen scrollabile su mobile
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* overlay */}
       <div className="absolute inset-0 backdrop-blur-md" onClick={onClose} />
 
       {/* dialog */}
       <div
-        className="relative z-10 max-w-[1100px] mx-auto my-[5vh] grid grid-cols-1 md:grid-cols-2 min-h-[64vh]
-                   overflow-hidden rounded-2xl border border-white/10 shadow-deep bg-gradient-to-b from-[#0b1324] to-[#0e1830]"
+        className="
+          relative z-10 max-w-[1100px] mx-auto my-4 md:my-[5vh]
+          grid grid-cols-1 md:grid-cols-2
+          max-h-[92vh] md:h-[80vh]
+          overflow-y-auto md:overflow-hidden
+          rounded-2xl border border-white/10 shadow-deep
+          bg-gradient-to-b from-[#0b1324] to-[#0e1830]
+        "
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -64,7 +72,7 @@ export default function ProductModal({ product, onClose }) {
 
         {/* Media + categorie/prezzo */}
         <div className="flex flex-col border-b md:border-b-0 md:border-r border-white/10">
-          {/* Contenitore media */}
+          {/* Media */}
           <div className="relative flex-1 min-h-[260px]">
             <MediaCarousel
               media={product.media}
@@ -72,7 +80,6 @@ export default function ProductModal({ product, onClose }) {
               onIndex={setIndex}
             />
 
-            {/* FRECCE */}
             {total > 1 && (
               <>
                 <button
@@ -127,18 +134,36 @@ export default function ProductModal({ product, onClose }) {
 
           {/* Metadati sotto l'immagine */}
           <div className="flex items-center text-3xl gap-2 px-4 py-3 border-t border-white/10">
-            <Badge>{product.category}</Badge>
-            <BadgeSolid>{product.tag}</BadgeSolid>
             <StatusBadge status={product.status} />
-            <span className="ml-auto font-black text-white">
-              {product.price}
+            <span className="ml-auto font-black text-white flex items-baseline gap-3">
+              {showDiscount ? (
+                <>
+                  <span className="line-through opacity-70 text-xl">
+                    {product.old_price}
+                  </span>
+                  <span className="text-emerald-300">{product.price}</span>
+                  {product.discount_percent ? (
+                    <span className="text-xs font-black px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-200 border border-emerald-400/30">
+                      -{product.discount_percent}%
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <>{product.price} €</>
+              )}
             </span>
           </div>
         </div>
 
         {/* Info */}
-        <div className="p-6 md:p-7 overflow-y-auto">
-          <h3 id="modal-title" className="text-3xl font-black m-0">
+        <div className="p-6 md:p-7 md:overflow-y-auto">
+          {/* Badges ben distanziati */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
+            <Badge>{product.category}</Badge>
+            <BadgeSolid>{product.tag}</BadgeSolid>
+          </div>
+
+          <h3 id="modal-title" className="text-3xl font-black m-0 capitalize">
             {product.title}
           </h3>
           <p className="text-white/85 leading-relaxed mt-4">

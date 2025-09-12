@@ -3,23 +3,52 @@ import { Tabs, Chips } from "./TabsChips";
 import SearchBox from "./SearchBox";
 
 export default function Filters({
-  categories,
+  categories = [],
   cat,
-  setCat,
+  setCat = () => {},
   tag,
-  setTag,
+  setTag = () => {},
   search,
-  setSearch,
+  setSearch = () => {},
+  // opzionali: se non passati, uso un fallback interno
+  status,
+  setStatus,
 }) {
   const [open, setOpen] = useState(false);
 
-  const mainTags = ["Tutte", "Fantasy", "Modern"];
+  const mainTags = ["Tutte", "Fantasy", "Modern", "Altro"];
   const otherCategories = categories;
+
+  // ===== Stato "status" robusto (fallback interno) =====
+  const [internalStatus, setInternalStatus] = useState("tutti");
+  const statusValue =
+    typeof status === "string" && status.length ? status : internalStatus;
+  const setStatusSafe =
+    typeof setStatus === "function" ? setStatus : setInternalStatus;
+
+  useEffect(() => {
+    if (typeof status === "string") setInternalStatus(status);
+  }, [status]);
+
+  // mapping etichetta <-> valore
+  const STATUS_ITEMS = [
+    { label: "Tutti", value: "tutti" },
+    { label: "In vendita", value: "in_vendita" },
+    { label: "Venduto", value: "venduto" },
+  ];
+  const statusLabels = STATUS_ITEMS.map((s) => s.label);
+  const statusLabel =
+    STATUS_ITEMS.find((s) => s.value === statusValue)?.label || "Tutti";
+  const onStatusChange = (label) => {
+    const v = STATUS_ITEMS.find((s) => s.label === label)?.value || "tutti";
+    setStatusSafe(v);
+  };
 
   function resetAll() {
     setCat("Tutte");
     setTag("Tutte");
     setSearch("");
+    setStatusSafe("tutti");
   }
 
   // blocca lo scroll della pagina quando il drawer è aperto
@@ -37,18 +66,27 @@ export default function Filters({
         <div className="hidden md:flex items-center gap-3 justify-end">
           <Chips items={mainTags} value={tag} onChange={setTag} align="end" />
           <SearchBox value={search} onChange={setSearch} />
-          <button
-            onClick={resetAll}
-            className="px-3 py-2 rounded-full text-sm border border-white/20 text-white/80 hover:-translate-y-0.5 transition"
-            aria-label="Reset filtri"
-          >
-            Reset
-          </button>
         </div>
 
         {/* DESKTOP (md+): riga 2 (tutte le categorie centrate) */}
         <div className="hidden md:flex justify-center mt-5">
-          <Tabs items={otherCategories} value={cat} onChange={setCat} center wrap />
+          <Tabs
+            items={otherCategories}
+            value={cat}
+            onChange={setCat}
+            center
+            wrap
+          />
+        </div>
+
+        {/* DESKTOP (md+): riga 3 (stato a destra) */}
+        <div className="hidden md:flex items-center justify-end mt-2">
+          <Chips
+            items={statusLabels}
+            value={statusLabel}
+            onChange={onStatusChange}
+            align="end"
+          />
         </div>
 
         {/* MOBILE: bottone che apre il drawer */}
@@ -76,7 +114,7 @@ export default function Filters({
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
           />
 
-          {/* Drawer: full width su xs, sidebar su sm+ */}
+          {/* Drawer */}
           <aside
             id="filters-drawer"
             role="dialog"
@@ -99,25 +137,39 @@ export default function Filters({
 
             {/* Contenuto scrollabile */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-[env(safe-area-inset-bottom)]">
-              {/* SOPRA: chips principali a destra + search full width sotto */}
+              {/* chips principali + search */}
               <div className="space-y-3">
                 <Chips
                   items={mainTags}
                   value={tag}
                   onChange={setTag}
-                  align="end"
+                  center
                   wrap
                 />
                 <SearchBox value={search} onChange={setSearch} full />
               </div>
 
-              {/* SOTTO: tutte le categorie centrate e a capo */}
+              {/* categorie */}
               <div className="space-y-2">
-                <div className="text-sm text-white/70 text-center">Categorie</div>
+                <div className="text-sm text-white/70 text-center">
+                  Categorie
+                </div>
                 <Tabs
                   items={otherCategories}
                   value={cat}
                   onChange={setCat}
+                  center
+                  wrap
+                />
+              </div>
+
+              {/* stato */}
+              <div className="space-y-2">
+                <div className="text-sm text-white/70 text-center">Stato</div>
+                <Chips
+                  items={statusLabels}
+                  value={statusLabel}
+                  onChange={onStatusChange}
                   center
                   wrap
                 />

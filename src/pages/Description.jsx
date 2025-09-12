@@ -9,7 +9,7 @@ const fadeUp = {
 
 export default function Description() {
   return (
-    <section className="space-y-10 px-25">
+    <section className="space-y-10 px-25 pt-30">
       {/* Hero titolo descrizione */}
       <motion.div {...fadeUp} className="text-center space-y-3">
         <div className="flex items-center gap-3 mb-3">

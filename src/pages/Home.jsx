@@ -32,7 +32,6 @@ export default function Home() {
     show: { opacity: 1, transition: { duration: 0.5 } },
   };
 
-  // Logo: gira in entrata, poi passa a fluttuare in loop con Framer
   const spinIn = {
     hidden: { opacity: 0, rotate: -180, scale: 0.5, y: 0 },
     show: {
@@ -48,7 +47,7 @@ export default function Home() {
       initial="hidden"
       animate="show"
       variants={page}
-      className="relative min-h-[58vh] py-16 flex flex-col items-center"
+      className="relative min-h-[58vh] py-16 md:pt-50 pt-20 flex flex-col items-center"
     >
       <motion.span
         variants={fadeIn}

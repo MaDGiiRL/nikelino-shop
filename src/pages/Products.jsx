@@ -3,7 +3,7 @@ import Filters from "../components/Filters";
 import ProductCard from "../components/ProductCard";
 import ProductModal from "../components/ProductModal";
 import Swal from "sweetalert2";
-import { supabase } from "../supabase/supabase-client";
+import supabase from "../supabase/supabase-client";
 import { motion, AnimatePresence } from "framer-motion";
 
 const STATIC_CATEGORIES = [
@@ -17,34 +17,25 @@ const STATIC_CATEGORIES = [
   "Spells",
   "Armi",
   "Occhi Custom",
-  "Grafiche"
+  "Grafiche",
+  "Pack"
 ];
 
-// Variants per composizione elegante con stagger
+// Variants
 const gridVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: {
-      // attiva lo staggering sugli item figli
-      staggerChildren: 0.06,
-      delayChildren: 0.08,
-    },
+    transition: { staggerChildren: 0.06, delayChildren: 0.08 },
   },
 };
-
 const itemVariants = {
   hidden: { opacity: 0, y: 22, scale: 0.98 },
   show: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 260,
-      damping: 22,
-      mass: 0.6,
-    },
+    transition: { type: "spring", stiffness: 260, damping: 22, mass: 0.6 },
   },
   exit: {
     opacity: 0,
@@ -58,6 +49,7 @@ export default function Products() {
   const [cat, setCat] = useState("Tutte");
   const [tag, setTag] = useState("Tutte");
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("tutti"); // ⬅️ NEW
   const [open, setOpen] = useState(null);
   const [all, setAll] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,13 +76,20 @@ export default function Products() {
     return (all || [])
       .filter((p) => cat === "Tutte" || p.category === cat)
       .filter((p) => tag === "Tutte" || p.tag === tag)
+      .filter((p) => {
+        if (status === "tutti") return true;
+        // fallback: se manca status nel record, consideralo "in_vendita"
+        const s = p.status || "in_vendita";
+        return s === status;
+      })
       .filter(
         (p) =>
           !q ||
-          p.title.toLowerCase().includes(q) ||
-          p.short.toLowerCase().includes(q)
+          (p.title && p.title.toLowerCase().includes(q)) ||
+          (p.short && p.short.toLowerCase().includes(q)) ||
+          (p.details && p.details.toLowerCase().includes(q))
       );
-  }, [all, cat, tag, search]);
+  }, [all, cat, tag, status, search]); // ⬅️ aggiunto "status" nelle deps
 
   function handleOpen(p) {
     setOpen(p);
@@ -113,8 +112,7 @@ export default function Products() {
   }
 
   return (
-    <section>
-      {/* Titolo con fade/slide-in */}
+    <section className="pt-20">
       <motion.h1
         className="text-4xl md:text-5xl font-black text-center py-5"
         initial={{ opacity: 0, y: 16 }}
@@ -124,7 +122,6 @@ export default function Products() {
         Prodotti
       </motion.h1>
 
-      {/* Filtri con leggero fade-in */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -138,6 +135,9 @@ export default function Products() {
           setTag={setTag}
           search={search}
           setSearch={setSearch}
+          // ⬇️ passa lo stato allo UI filter
+          status={status}
+          setStatus={setStatus}
         />
       </motion.div>
 
@@ -146,7 +146,6 @@ export default function Products() {
           <div className="py-10 text-center text-white/70">Caricamento…</div>
         ) : (
           <>
-            {/* Griglia animata: parent con stagger + AnimatePresence per enter/exit */}
             <motion.div
               className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-[22px] my-6"
               variants={gridVariants}
@@ -171,7 +170,6 @@ export default function Products() {
               </AnimatePresence>
             </motion.div>
 
-            {/* CTA con micro-animazione */}
             <motion.div
               className="flex justify-center mb-8"
               initial={{ opacity: 0, y: 8 }}
@@ -186,10 +184,8 @@ export default function Products() {
         )}
       </div>
 
-      {/* Modal con AnimatePresence (richiede che il modal supporti framer-motion internamente; vedi nota sotto) */}
       <AnimatePresence>
         {open && (
-          // Se non modifichi il componente Modal, puoi racchiuderlo in un motion.div trasparente per gestire exit
           <motion.div
             key="product-modal"
             initial={{ opacity: 0 }}

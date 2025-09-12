@@ -9,7 +9,7 @@
     --accent: #67e8f9;
     --accent2: #22d3ee;
     --shadow: 0 24px 80px #000b;
-    --topnav-h: 64px;
+
 }
 
 
@@ -19,7 +19,6 @@ body {
 }
 
 body {
-    padding-top: var(--topnav-h);
     color: var(--text);
 }
 
