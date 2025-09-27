@@ -33,7 +33,6 @@ export const PRODUCTS = [
 
 export const COLLABORATORS = [
     { name: 'Nikelino_k', role: 'Owner', avatar: 'https://cdn.discordapp.com/avatars/993285167693180998/fd3cea714c30337a1140a5608e7c84d9.webp?size=1024' },
-    { name: 'Pigeon', role: 'Collaborator', avatar: 'https://cdn.discordapp.com/avatars/313372213569126420/eb05f884964bf7fbc8a824a7acc75802.webp?size=1024' },
     { name: 'Violetzx', role: 'Collaborator', avatar: 'https://cdn.discordapp.com/avatars/730759320832311307/c97543aea32ef7fcb54888bb6ce352ac.webp?size=1024' },
     { name: 'MaDGiiRL', role: 'Collaborator', avatar: 'https://cdn.discordapp.com/avatars/1083151092445106196/fb45d0be4ad05a8a8de1607aa5b37ccf.webp?size=1024' },
 ];
