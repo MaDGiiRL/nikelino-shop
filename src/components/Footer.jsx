@@ -63,7 +63,7 @@ export default function Footer() {
             <div className="text-sm leading-relaxed space-y-3 max-h-[70vh] overflow-y-auto pr-2">
               <p>
                 Benvenuto su <strong>Nikelino Shop</strong>. Noi – MaDGiiRL,
-                Pigeon, Nikelino e Violet – ci impegniamo a proteggere la tua
+                Nikelino e Ale – ci impegniamo a proteggere la tua
                 privacy e i tuoi dati personali. In questa policy spieghiamo
                 quali dati raccogliamo, come li usiamo e quali sono i tuoi
                 diritti.
