@@ -20,6 +20,8 @@ const CATEGORIES = [
   "Occhi Custom",
   "Grafiche",
   "Pack",
+  "Auto emissive",
+  "Auto non emissive",
 ];
 
 // Filtro tag nella LISTA admin
